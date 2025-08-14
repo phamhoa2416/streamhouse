@@ -1,0 +1,165 @@
+---
+# Source: streamhouse/templates/kafka/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka
+  namespace: streamhouse-data
+  labels:
+    app: streamhouse
+    component: kafka
+spec:
+  type: ClusterIP
+  ports:
+    - name: external
+      port: 9092
+      targetPort: 9092
+    - name: plaintext
+      port: 29092
+      targetPort: 29092
+    - name: controller
+      port: 29093
+      targetPort: 29093
+  selector:
+    app: streamhouse
+    component: kafka
+---
+# Source: streamhouse/templates/kafka/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-headless
+  namespace: streamhouse-data
+  labels:
+    app: streamhouse
+    component: kafka
+spec:
+
+  selector:
+    app: streamhouse
+    component: kafka
+  ports:
+    - name: external
+      port: 9092
+      targetPort: 9092
+    - name: plaintext
+      port: 29092
+      targetPort: 29092
+    - name: controller
+      port: 29093
+      targetPort: 29093
+---
+# Source: streamhouse/templates/kafka/deployment.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kafka
+  namespace: streamhouse-data
+  labels:
+    app: streamhouse
+    component: kafka
+spec:
+  serviceName: kafka-headless
+  replicas: 3
+  selector:
+    matchLabels:
+      app: streamhouse
+      component: kafka
+  template:
+    metadata:
+      labels:
+        app: streamhouse
+        component: kafka
+    spec:
+      securityContext:
+        fsGroup: 1000
+        runAsUser: 1000
+      containers:
+        - name: kafka
+          image: "apache/kafka:4.0.0"
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: KAFKA_ENABLE_KRAFT
+              value: "true"
+            - name: KAFKA_NODE_ID
+              value: "$(echo ${POD_NAME} | sed 's/.*-//')"
+            - name: KAFKA_PROCESS_ROLES
+              value: "broker,controller"
+            - name: KAFKA_LISTENERS
+              value: "PLAINTEXT://0.0.0.0:29092,CONTROLLER://0.0.0.0:29093,PLAINTEXT_HOST://0.0.0.0:9092"
+            - name: KAFKA_ADVERTISED_LISTENERS
+              value: "PLAINTEXT://$(POD_NAME).kafka-headless.streamhouse-data.svc.cluster.local:29092,PLAINTEXT_HOST://$(POD_NAME).kafka-headless.streamhouse-data.svc.cluster.local:9092"
+            - name: KAFKA_CONTROLLER_LISTENER_NAMES
+              value: "CONTROLLER"
+            - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
+              value: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT"
+            - name: KAFKA_CONTROLLER_QUORUM_VOTERS
+              value: "0@kafka-0.kafka-headless.streamhouse-data.svc.cluster.local:29093,1@kafka-1.kafka-headless.streamhouse-data.svc.cluster.local:29093,2@kafka-2.kafka-headless.streamhouse-data.svc.cluster.local:29093"
+            - name: KAFKA_NUM_PARTITIONS
+              value: "3"
+            - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+              value: "3"
+            - name: KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR
+              value: "3"
+            - name: KAFKA_TRANSACTION_STATE_LOG_MIN_ISR
+              value: "2"
+            - name: KAFKA_DEFAULT_REPLICATION_FACTOR
+              value: "3"
+            - name: KAFKA_MIN_IN_SYNC_REPLICAS
+              value: "2"
+            - name: KAFKA_LOG_DIRS
+              value: "/var/lib/kafka/data"
+            - name: KAFKA_LOG_RETENTION_HOURS
+              value: "168"
+            - name: KAFKA_AUTO_CREATE_TOPICS_ENABLE
+              value: "true"
+          ports:
+            - containerPort: 9092
+              name: external
+            - containerPort: 29092
+              name: plaintext
+            - containerPort: 29093
+              name: controller
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:29092"
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:29092"
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 3
+          volumeMounts:
+            - name: kafka-data
+              mountPath: /var/lib/kafka/data
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: 1000m
+              memory: 2Gi
+  volumeClaimTemplates:
+    - metadata:
+        name: kafka-data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: standard
+        resources:
+          requests:
+            storage: 5Gi
