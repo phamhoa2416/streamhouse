@@ -40,34 +40,66 @@ kafka:
 #  sqlClient:
 #    enabled: true
 
-minio:
-  enabled: true
+postgres:
   image:
-    repository: minio/minio
-    tag: "RELEASE.2023-07-21T21-12-44Z"
+    repository: postgres
+    tag: "15.4-alpine"
     pullPolicy: IfNotPresent
-  mode:
-    type: distributed
-    replicas: 4
+
   auth:
-    rootUser: minio-admin
-    rootPassword: minio-password
+    postgresUser: postgres_user
+    postgresPassword: postgres_password
+    username: phamviethoa
+    password: postgres_pwd
+
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+    requests:
+      cpu: 500m
+      memory: 1Gi
+
   persistence:
     enabled: true
-    size: 5Gi
+    size: 30Gi
     storageClass: standard
+    accessModes:
+      - ReadWriteOnce
+
   service:
     type: ClusterIP
-    ports:
-      api: 9000
-      console: 9001
-  config:
-    region: ap-southeast-1
-    browser: "on"
-  resources: {}
-  nodeSelector: {}
-  tolerations: []
-  affinity: {}
+    port: 5432
+
+#minio:
+#  enabled: true
+#  image:
+#    repository: minio/minio
+#    tag: "RELEASE.2023-07-21T21-12-44Z"
+#    pullPolicy: IfNotPresent
+#  mode:
+#    type: distributed
+#    replicas: 4
+#  auth:
+#    rootUser: minio-admin
+#    rootPassword: minio-password
+#  persistence:
+#    enabled: true
+#    size: 5Gi
+#    storageClass: standard
+#  service:
+#    type: ClusterIP
+#    ports:
+#      api: 9000
+#      console: 9001
+#  config:
+#    region: ap-southeast-1
+#    browser: "on"
+#  resources: {}
+#  nodeSelector: {}
+#  tolerations: []
+#  affinity: {}
+
 
 
 #trino:
