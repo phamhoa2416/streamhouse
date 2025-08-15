@@ -1,0 +1,87 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgresql-secret
+  namespace: streamhouse-data
+type: Opaque
+data:
+  POSTGRES_USER: cGhhbXZpZXRob2E=   # phamviethoa
+  POSTGRES_PASSWORD: cG9zdGdyZXNfcGFzc3dvcmQ= # postgres_password
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgresql
+  namespace: streamhouse-data
+spec:
+  type: ClusterIP
+  selector:
+    app: streamhouse
+    component: postgresql
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgresql-headless
+  namespace: streamhouse-data
+spec:
+  clusterIP: None
+  selector:
+    app: streamhouse
+    component: postgresql
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgresql
+  namespace: streamhouse-data
+spec:
+  serviceName: postgresql-headless
+  replicas: 1
+  selector:
+    matchLabels:
+      app: streamhouse
+      component: postgresql
+  template:
+    metadata:
+      labels:
+        app: streamhouse
+        component: postgresql
+    spec:
+      containers:
+        - name: postgresql
+          image: postgres:15.4-alpine
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgresql-secret
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgresql-secret
+                  key: POSTGRES_PASSWORD
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: standard
+        resources:
+          requests:
+            storage: 30Gi
