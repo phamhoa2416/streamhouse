@@ -8,24 +8,24 @@ namespaces:
   data: "streamhouse-data"
   monitoring: "streamhouse-monitoring"
 
-kafka:
-  enabled: true
-  image:
-    repository: apache/kafka
-    tag: "4.0.0"
-    pullPolicy: IfNotPresent
-  replicas: 3
-  persistence:
-    enabled: true
-    size: 5Gi
-    storageClass: standard
-  service:
-    type: ClusterIP
-    port: 9092
-  config:
-    numPartitions: 3
-    replicationFactor: 3
-    minInSyncReplicas: 2
+# kafka:
+#   enabled: true
+#   image:
+#     repository: apache/kafka
+#     tag: "4.0.0"
+#     pullPolicy: IfNotPresent
+#   replicas: 3
+#   persistence:
+#     enabled: true
+#     size: 5Gi
+#     storageClass: standard
+#   service:
+#     type: ClusterIP
+#     port: 9092
+#   config:
+#     numPartitions: 3
+#     replicationFactor: 3
+#     minInSyncReplicas: 2
 
 #flink:
 #  enabled: true
@@ -45,13 +45,10 @@ postgres:
     repository: postgres
     tag: "15.4-alpine"
     pullPolicy: IfNotPresent
-
   auth:
-    postgresUser: postgres_user
-    postgresPassword: postgres_password
-    username: phamviethoa
-    password: postgres_pwd
-
+    postgresUser: phamviethoa
+    postgresPassword: streamhouse-postgres
+    postgresDB: banking-system
   resources:
     limits:
       cpu: 1000m
@@ -59,14 +56,12 @@ postgres:
     requests:
       cpu: 500m
       memory: 1Gi
-
   persistence:
     enabled: true
     size: 30Gi
     storageClass: standard
     accessModes:
       - ReadWriteOnce
-
   service:
     type: ClusterIP
     port: 5432
