@@ -1,85 +1,85 @@
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: minio
-  namespace: {{ .Values.namespaces.data }}
-  labels:
-    app: {{ .Values.global.appName }}
-    component: minio
-spec:
-  serviceName: minio-headless
-  replicas: {{ .Values.minio.mode.replicas }}
-  selector:
-    matchLabels:
-      app: {{ .Values.global.appName }}
-      component: minio
-  template:
-    metadata:
-      labels:
-        app: {{ .Values.global.appName }}
-        component: minio
-    spec:
-      containers:
-        - name: minio
-          image: "{{ .Values.minio.image.repository }}:{{ .Values.minio.image.tag }}"
-          imagePullPolicy: {{ .Values.minio.image.pullPolicy }}
-          args:
-            - server
-            {{- range $i, $e := until (int .Values.minio.mode.replicas) }}
-            - http://minio-{{ $i }}.minio-headless.{{ $.Values.namespaces.data }}.svc.cluster.local/data
-            {{- end }}
-            - --console-address
-            - ":9001"
-          env:
-            - name: MINIO_ROOT_USER
-              valueFrom:
-                secretKeyRef:
-                  name: minio-secret
-                  key: rootUser
-            - name: MINIO_ROOT_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: minio-secret
-                  key: rootPassword
-            - name: MINIO_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: minio-secret
-                  key: accessKey
-            - name: MINIO_SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: minio-secret
-                  key: secretKey
-            - name: MINIO_REGION_NAME
-              valueFrom:
-                secretKeyRef:
-                  name: minio-secret
-                  key: region
-          ports:
-            - containerPort: 9000
-              name: api
-            - containerPort: 9001
-              name: console
-          livenessProbe:
-            httpGet:
-              path: /minio/health/live
-              port: 9000
-            initialDelaySeconds: 30
-          readinessProbe:
-            httpGet:
-              path: /minio/health/ready
-              port: 9000
-            initialDelaySeconds: 10
-          volumeMounts:
-            - name: data
-              mountPath: /data
-  volumeClaimTemplates:
-    - metadata:
-        name: data
-      spec:
-        accessModes: [ "ReadWriteOnce" ]
-        storageClassName: standard
-        resources:
-          requests:
-            storage: {{ .Values.minio.persistence.size }}
+{{/*apiVersion: apps/v1*/}}
+{{/*kind: StatefulSet*/}}
+{{/*metadata:*/}}
+{{/*  name: minio*/}}
+{{/*  namespace: {{ .Values.namespaces.data }}*/}}
+{{/*  labels:*/}}
+{{/*    app: {{ .Values.global.appName }}*/}}
+{{/*    component: minio*/}}
+{{/*spec:*/}}
+{{/*  serviceName: minio-headless*/}}
+{{/*  replicas: {{ .Values.minio.mode.replicas }}*/}}
+{{/*  selector:*/}}
+{{/*    matchLabels:*/}}
+{{/*      app: {{ .Values.global.appName }}*/}}
+{{/*      component: minio*/}}
+{{/*  template:*/}}
+{{/*    metadata:*/}}
+{{/*      labels:*/}}
+{{/*        app: {{ .Values.global.appName }}*/}}
+{{/*        component: minio*/}}
+{{/*    spec:*/}}
+{{/*      containers:*/}}
+{{/*        - name: minio*/}}
+{{/*          image: "{{ .Values.minio.image.repository }}:{{ .Values.minio.image.tag }}"*/}}
+{{/*          imagePullPolicy: {{ .Values.minio.image.pullPolicy }}*/}}
+{{/*          args:*/}}
+{{/*            - server*/}}
+{{/*            {{- range $i, $e := until (int .Values.minio.mode.replicas) }}*/}}
+{{/*            - http://minio-{{ $i }}.minio-headless.{{ $.Values.namespaces.data }}.svc.cluster.local/data*/}}
+{{/*            {{- end }}*/}}
+{{/*            - --console-address*/}}
+{{/*            - ":9001"*/}}
+{{/*          env:*/}}
+{{/*            - name: MINIO_ROOT_USER*/}}
+{{/*              valueFrom:*/}}
+{{/*                secretKeyRef:*/}}
+{{/*                  name: minio-secret*/}}
+{{/*                  key: rootUser*/}}
+{{/*            - name: MINIO_ROOT_PASSWORD*/}}
+{{/*              valueFrom:*/}}
+{{/*                secretKeyRef:*/}}
+{{/*                  name: minio-secret*/}}
+{{/*                  key: rootPassword*/}}
+{{/*            - name: MINIO_ACCESS_KEY*/}}
+{{/*              valueFrom:*/}}
+{{/*                secretKeyRef:*/}}
+{{/*                  name: minio-secret*/}}
+{{/*                  key: accessKey*/}}
+{{/*            - name: MINIO_SECRET_KEY*/}}
+{{/*              valueFrom:*/}}
+{{/*                secretKeyRef:*/}}
+{{/*                  name: minio-secret*/}}
+{{/*                  key: secretKey*/}}
+{{/*            - name: MINIO_REGION_NAME*/}}
+{{/*              valueFrom:*/}}
+{{/*                secretKeyRef:*/}}
+{{/*                  name: minio-secret*/}}
+{{/*                  key: region*/}}
+{{/*          ports:*/}}
+{{/*            - containerPort: 9000*/}}
+{{/*              name: api*/}}
+{{/*            - containerPort: 9001*/}}
+{{/*              name: console*/}}
+{{/*          livenessProbe:*/}}
+{{/*            httpGet:*/}}
+{{/*              path: /minio/health/live*/}}
+{{/*              port: 9000*/}}
+{{/*            initialDelaySeconds: 30*/}}
+{{/*          readinessProbe:*/}}
+{{/*            httpGet:*/}}
+{{/*              path: /minio/health/ready*/}}
+{{/*              port: 9000*/}}
+{{/*            initialDelaySeconds: 10*/}}
+{{/*          volumeMounts:*/}}
+{{/*            - name: data*/}}
+{{/*              mountPath: /data*/}}
+{{/*  volumeClaimTemplates:*/}}
+{{/*    - metadata:*/}}
+{{/*        name: data*/}}
+{{/*      spec:*/}}
+{{/*        accessModes: [ "ReadWriteOnce" ]*/}}
+{{/*        storageClassName: standard*/}}
+{{/*        resources:*/}}
+{{/*          requests:*/}}
+{{/*            storage: {{ .Values.minio.persistence.size }}*/}}
