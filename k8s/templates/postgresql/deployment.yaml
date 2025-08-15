@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgresql
+  namespace: {{ .Values.namespaces.data }}
+  labels:
+      app: {{ .Values.global.appName }}
+      component: postgresql
+spec:
+  serviceName: postgresql-headless
+  replicas: 1
+  selector:
+      matchLabels:
+        app: {{ .Values.global.appName }}
+        component: postgresql
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.global.appName }}
+        component: postgresql
+    spec:
+      containers:
+        - name: postgresql
+          image: {{ .Values.postgres.image.repository }}:{{ .Values.postgres.image.tag }}
+          imagePullPolicy: {{ .Values.postgres.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.postgres.service.port }}
+              name: postgresql
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgresql-secret
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgresql-secret
+                  key: POSTGRES_PASSWORD
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: init-scripts
+              mountPath: /docker-entrypoint-initdb.d/
+          resources:
+                      {{ toYaml .Values.postgres.resources | nindent 12 }}
+{{/*      volumes:*/}}
+{{/*          - name: init-scripts*/}}
+{{/*            configMap:*/}}
+{{/*                  name: {{ include "banking-postgresql.fullname" . }}-init-scripts*/}}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: {{ .Values.postgres.persistence.accessModes }}
+        resources:
+          requests:
+            storage: {{ .Values.postgres.persistence.size }}
+            storageClassName: {{ .Values.postgres.persistence.storageClass }}
