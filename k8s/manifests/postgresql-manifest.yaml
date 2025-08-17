@@ -1,0 +1,119 @@
+---
+# Source: streamhouse/templates/postgresql/secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgresql-secret
+  namespace: streamhouse-data
+  labels:
+    app: streamhouse
+    component: postgresql
+type: Opaque
+data:
+  POSTGRES_USER: "cGhhbXZpZXRob2E="
+  POSTGRES_PASSWORD: "c3RyZWFtaG91c2UtcG9zdGdyZXM="
+  POSTGRES_DB: "YmFua2luZy1zeXN0ZW0="
+---
+# Source: streamhouse/templates/postgresql/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgresql
+  namespace: streamhouse-data
+  labels:
+    app: streamhouse
+    component: postgresql
+spec:
+  type: ClusterIP
+  selector:
+      app: streamhouse
+      component: postgresql
+  ports:
+    - name: postgresql
+      port: 5432
+      targetPort: 5432
+---
+# Source: streamhouse/templates/postgresql/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgresql-headless
+  namespace: streamhouse-data
+spec:
+  clusterIP: None
+  selector:
+    app: streamhouse
+    component: postgresql
+  ports:
+    - name: postgresql
+      port: 5432
+      targetPort: 5432
+---
+# Source: streamhouse/templates/postgresql/statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgresql
+  namespace: streamhouse-data
+  labels:
+      app: streamhouse
+      component: postgresql
+spec:
+  serviceName: postgresql-headless
+  replicas: 1
+  selector:
+      matchLabels:
+        app: streamhouse
+        component: postgresql
+  template:
+    metadata:
+      labels:
+        app: streamhouse
+        component: postgresql
+    spec:
+      containers:
+        - name: postgresql
+          image: postgres:15.4-alpine
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5432
+              name: postgresql
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgresql-secret
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgresql-secret
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: postgresql-secret
+                  key: POSTGRES_DB
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          resources:
+            
+            limits:
+              cpu: 1000m
+              memory: 2Gi
+            requests:
+              cpu: 500m
+              memory: 1Gi
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: standard
+        resources:
+          requests:
+            storage: 30Gi
