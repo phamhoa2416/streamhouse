@@ -8,24 +8,24 @@ namespaces:
   data: "streamhouse-data"
   monitoring: "streamhouse-monitoring"
 
-# kafka:
-#   enabled: true
-#   image:
-#     repository: apache/kafka
-#     tag: "4.0.0"
-#     pullPolicy: IfNotPresent
-#   replicas: 3
-#   persistence:
-#     enabled: true
-#     size: 5Gi
-#     storageClass: standard
-#   service:
-#     type: ClusterIP
-#     port: 9092
-#   config:
-#     numPartitions: 3
-#     replicationFactor: 3
-#     minInSyncReplicas: 2
+kafka:
+  enabled: true
+  image:
+    repository: "bitnami/kafka"
+    tag: "4.0.0-debian-12-r0"
+    pullPolicy: IfNotPresent
+  replicas: 3
+  persistence:
+    enabled: true
+    size: 5Gi
+    storageClass: standard
+  service:
+    type: ClusterIP
+    port: 9092
+  config:
+    numPartitions: 3
+    replicationFactor: 3
+    minInSyncReplicas: 2
 
 #flink:
 #  enabled: true
@@ -148,16 +148,59 @@ starrocks:
         http: 8060
         rpc: 8040
         heartbeat: 9050
+  probe:
+    readiness:
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+    liveness:
+      initialDelaySeconds: 300
+      periodSeconds: 10
+      timeoutSeconds: 10
+      failureThreshold: 3
 
   bootstrap:
     enabled: true
     waitInterval: 10
     maxAttempts: 60
 
-#trino:
-#  enabled: true
-#  service:
-#    type: NodePort
-#    port: 8080
-#  jvm:
-#    maxMemory: 2G
+trino:
+  enabled: true
+  coordinator:
+    replicas: 1
+    resources:
+      requests:
+        memory: 1Gi
+        cpu: 500m
+      limits:
+        memory: 2Gi
+        cpu: 1000m
+  worker:
+    replicas: 3
+    resources:
+      requests:
+        memory: 2Gi
+        cpu: 1000m
+      limits:
+        memory: 4Gi
+        cpu: 2000m
+  image:
+    repository: trinodb/trino
+    tag: 475
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    ports:
+      http: 8080
+  probe:
+    readiness:
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+    liveness:
+      initialDelaySeconds: 300
+      periodSeconds: 10
+      timeoutSeconds: 10
+      failureThreshold: 3
