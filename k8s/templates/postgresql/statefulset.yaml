@@ -53,11 +53,11 @@ spec:
     - metadata:
         name: data
       spec:
-        accessModes: 
-          {{- toYaml .Values.postgres.persistence.accessModes | nindent 10 }}
+        accessModes:
+          {{ toYaml .Values.postgres.persistence.accessModes | nindent 10 }}
         {{- if .Values.postgres.persistence.storageClass }}
         storageClassName: {{ .Values.postgres.persistence.storageClass }}
         {{- end }}
-      resources:
-        requests:
-          storage: {{ .Values.postgres.persistence.size }}
+        resources:
+          requests:
+            storage: {{ .Values.postgres.persistence.size }}
