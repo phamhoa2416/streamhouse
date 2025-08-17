@@ -15,7 +15,6 @@ spec:
     - name: postgresql
       port: {{ .Values.postgres.service.port }}
       targetPort: {{ .Values.postgres.service.port }}
-
 ---
 apiVersion: v1
 kind: Service
