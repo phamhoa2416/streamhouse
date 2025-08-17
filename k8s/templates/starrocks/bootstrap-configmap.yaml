@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: starrocks-bootstrap
+  namespace: {{ .Values.namespaces.data }}
+  labels:
+    app: {{ .Values.global.appName }}
+    component: starrocks
+data:
+  bootstrap.sh: |
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    FE_HOST="starrocks-fe-0.starrocks-fe-headless.{{ .Values.namespaces.data }}.svc.cluster.local"
+    MYSQL_PORT="{{ .Values.starrocks.frontend.service.ports.mysql }}"
+    USER="{{ .Values.starrocks.auth.user }}"
+    PASSWORD="{{ .Values.starrocks.auth.password }}"
+
+    echo "Waiting for StarRocks FE to be ready..."
+    until mysql -h ${FE_HOST} -P ${MYSQL_PORT} -u${USER} -p${PASSWORD} -e "SHOW FRONTENDS;" >/dev/null 2>&1; do
+      sleep 5
+    done
+
+    echo "FE is ready. Starting bootstrap process..."
+    for i in $(seq 1 $(({{ .Values.starrocks.frontend.replicas }}-1))); do
+      FE_FOLLOWER="starrocks-fe-${i}.starrocks-fe-headless.{{ .Values.namespaces.data }}.svc.cluster.local"
+      mysql -h ${FE_HOST} -P ${MYSQL_PORT} -u${USER} -p${PASSWORD} -e "ALTER SYSTEM ADD FOLLOWER \"${FE_FOLLOWER}:${MYSQL_PORT}\";" || true
+    done
+
+    echo "Registering StarRocks BE nodes..."
+    for i in $(seq 0 $(({{ .Values.starrocks.backend.replicas }}-1))); do
+      BE_HOST="starrocks-be-${i}.starrocks-be-headless.{{ .Values.namespaces.data }}.svc.cluster.local"
+      mysql -h ${FE_HOST} -P ${MYSQL_PORT} -u${USER} -p${PASSWORD} -e "ALTER SYSTEM ADD BACKEND \"${BE_HOST}:{{ .Values.starrocks.backend.service.ports.heartbeat }}\";" || true
+    done
+
+    echo "StarRocks bootstrap completed successfully."

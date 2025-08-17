@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: starrocks-fe
+  namespace: {{ .Values.namespaces.data }}
+  labels:
+      app: {{ .Values.global.appName }}
+      component: starrocks-fe
+spec:
+  serviceName: starrocks-fe-headless
+  replicas: {{ .Values.starrocks.frontend.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.global.appName }}
+      component: starrocks-fe
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.global.appName }}
+        component: starrocks-fe
+    spec:
+      containers:
+        - name: starrocks-fe
+          image: {{ .Values.starrocks.frontend.image.repository }}:{{ .Values.starrocks.frontend.image.tag }}
+          imagePullPolicy: {{ .Values.starrocks.frontend.image.pullPolicy }}
+          command: [ "/opt/starrocks/fe/bin/start_fe.sh" ]
+          args:
+            - "--query_port=9030"
+            - "--http_port=8030"
+            - "--rpc_port=9020"
+          ports:
+            - name: http
+              containerPort: {{ .Values.starrocks.frontend.service.ports.http }}
+            - name: mysql
+              containerPort: {{ .Values.starrocks.frontend.service.ports.query }}
+            - name: rpc
+              containerPort: {{ .Values.starrocks.frontend.service.ports.rpc }}
+          env:
+            - name: STARROCKS_ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: starrocks-secret
+                  key: STARROCKS_ADMIN_USER
+            - name: STARROCKS_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: starrocks-secret
+                  key: STARROCKS_ADMIN_PASSWORD
+            - name: FE_HTTP_PORT
+              value: "{{ .Values.starrocks.frontend.service.ports.http }}"
+            - name: FE_RPC_PORT
+              value: "{{ .Values.starrocks.frontend.service.ports.rpc }}"
+            - name: FE_QUERY_PORT
+              value: "{{ .Values.starrocks.frontend.service.ports.query }}"
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.starrocks.frontend.service.ports.query }}
+            initialDelaySeconds: {{ .Values.starrocks.probe.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.starrocks.probe.readiness.periodSeconds }}
+            failureThreshold: {{ .Values.starrocks.probe.readiness.failureThreshold }}
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.starrocks.frontend.service.ports.query }}
+            initialDelaySeconds: {{ .Values.starrocks.probe.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.starrocks.probe.liveness.periodSeconds }}
+            failureThreshold: {{ .Values.starrocks.probe.liveness.failureThreshold }}
+          resources:
+            {{ toYaml .Values.starrocks.frontend.resources | nindent 12 }}
+          volumeMounts:
+            - name: starrocks-fe-storage
+              mountPath: /opt/starrocks/fe/meta
+  volumeClaimTemplates:
+    - metadata:
+        name: starrocks-fe-storage
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        {{- if .Values.starrocks.frontend.persistence.storageClass }}
+        storageClassName: {{ .Values.starrocks.frontend.persistence.storageClass }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.starrocks.frontend.persistence.size }}
