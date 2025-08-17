@@ -66,36 +66,93 @@ postgres:
     type: ClusterIP
     port: 5432
 
-#minio:
-#  enabled: true
-#  image:
-#    repository: minio/minio
-#    tag: "RELEASE.2023-07-21T21-12-44Z"
-#    pullPolicy: IfNotPresent
-#  mode:
-#    type: distributed
-#    replicas: 4
-#  auth:
-#    rootUser: minio-admin
-#    rootPassword: minio-password
-#  persistence:
-#    enabled: true
-#    size: 5Gi
-#    storageClass: standard
-#  service:
-#    type: ClusterIP
-#    ports:
-#      api: 9000
-#      console: 9001
-#  config:
-#    region: ap-southeast-1
-#    browser: "on"
-#  resources: {}
-#  nodeSelector: {}
-#  tolerations: []
-#  affinity: {}
+minio:
+  enabled: true
+  image:
+    repository: minio/minio
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  mode:
+    type: distributed
+    replicas: 4
+  auth:
+    rootUser: minio-admin
+    rootPassword: minio-password
+  persistence:
+    enabled: true
+    size: 5Gi
+    storageClass: standard
+  service:
+    type: ClusterIP
+    ports:
+      api: 9000
+      console: 9001
+  config:
+    region: ap-southeast-1
+    browser: "on"
+  resources: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
 
+starrocks:
+  auth:
+    enabled: true
+    user: starrocks
+    password: streamhouse-starrocks
 
+  frontend:
+    image:
+      repository: starrocks/fe-ubuntu
+      tag: "latest"
+      pullPolicy: IfNotPresent
+    replicas: 3
+    resources:
+      requests:
+        memory: 2Gi
+        cpu: 500m
+      limits:
+        memory: 4Gi
+        cpu: 1000m
+    persistence:
+      enabled: true
+      size: 15Gi
+      storageClass: standard
+    service:
+      type: ClusterIP
+      ports:
+        http: 8030
+        query: 9030
+        rpc: 9020
+
+  backend:
+    image:
+      repository: starrocks/be-ubuntu
+      tag: "latest"
+      pullPolicy: IfNotPresent
+    replicas: 3
+    resources:
+      requests:
+        memory: 4Gi
+        cpu: 1000m
+      limits:
+        memory: 8Gi
+        cpu: 2000m
+    persistence:
+      enabled: true
+      size: 30Gi
+      storageClass: standard
+    service:
+      type: ClusterIP
+      ports:
+        http: 8060
+        rpc: 8040
+        heartbeat: 9050
+
+  bootstrap:
+    enabled: true
+    waitInterval: 10
+    maxAttempts: 60
 
 #trino:
 #  enabled: true
