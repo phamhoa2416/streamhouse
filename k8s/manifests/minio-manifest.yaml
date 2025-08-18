@@ -57,6 +57,28 @@ spec:
       port: 9001
       targetPort: 9001
 ---
+# Source: streamhouse/templates/minio/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio-external
+  namespace: streamhouse-data
+  labels:
+    app: streamhouse
+    component: minio
+spec:
+  type: LoadBalancer
+  selector:
+    app: streamhouse
+    component: minio
+  ports:
+    - name: api
+      port: 9000
+      targetPort: 9000
+    - name: console
+      port: 9001
+      targetPort: 9001
+---
 # Source: streamhouse/templates/minio/statefulset.yaml
 apiVersion: apps/v1
 kind: StatefulSet
