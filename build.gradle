@@ -7,12 +7,58 @@ version = '1.0-SNAPSHOT'
 
 repositories {
     mavenCentral()
+    maven {
+        url "https://repository.apache.org/content/repositories/releases/"
+    }
+    maven {
+        url "https://repo1.maven.org/maven2/"
+    }
+}
+
+ext {
+    flinkVersion = "1.20.2"
+    flinkCdcVersion = "3.0.0"
+    flinkConnectorKafkaVersion = "3.4.0-1.20"
+    flinkConnectorJdbcVersion = "3.3.0-1.20"
+    hadoopVersion = "3.4.0"
+    awsSdkVersion = "1.12.750"
+    icebergVersion = "1.9.0"
+    paimonVersion = "1.2.0"
+    hudiVersion = "1.0.2"
+    hudiBundleVersion = "0.9.0"
+    log4jVersion = "2.24.3"
 }
 
 dependencies {
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    implementation "com.ververica:flink-connector-postgres-cdc:${flinkCdcVersion}"
+    implementation "org.apache.flink:flink-connector-kafka:${flinkConnectorKafkaVersion}"
+    implementation "org.apache.flink:flink-connector-jdbc:${flinkConnectorJdbcVersion}"
+
+
+    implementation "org.apache.flink:flink-s3-fs-hadoop:${flinkVersion}"
+    implementation "org.apache.hadoop:hadoop-aws:${hadoopVersion}"
+    implementation "com.amazonaws:aws-java-sdk-bundle:${awsSdkVersion}"
+
+
+    implementation "org.apache.iceberg:iceberg-flink-1.20:${icebergVersion}"
+    implementation "org.apache.iceberg:iceberg-flink-runtime-1.20:${icebergVersion}"
+
+
+    implementation "org.apache.paimon:paimon-flink-1.20:${paimonVersion}"
+    implementation "org.apache.paimon:paimon-s3:${paimonVersion}"
+
+
+    implementation "org.apache.hudi:hudi-flink1.20.x:${hudiVersion}"
+    implementation "org.apache.hudi:hudi-flink-bundle_2.12:${hudiBundleVersion}"
+
+
+    implementation "org.apache.logging.log4j:log4j-api:${log4jVersion}"
+    implementation "org.apache.logging.log4j:log4j-core:${log4jVersion}"
+    implementation "org.apache.logging.log4j:log4j-slf4j-impl:${log4jVersion}"
 }
 
 test {
