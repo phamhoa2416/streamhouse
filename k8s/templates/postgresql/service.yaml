@@ -30,3 +30,21 @@ spec:
     - name: postgresql
       port: {{ .Values.postgres.service.port }}
       targetPort: {{ .Values.postgres.service.port }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgresql-external
+  namespace: {{ .Values.namespaces.data }}
+  labels:
+    app: {{ .Values.global.appName }}
+    component: postgresql
+spec:
+  type: LoadBalancer
+  selector:
+    app: {{ .Values.global.appName }}
+    component: postgresql
+  ports:
+    - name: postgresql
+      port: {{ .Values.postgres.service.port }}
+      targetPort: {{ .Values.postgres.service.port }}

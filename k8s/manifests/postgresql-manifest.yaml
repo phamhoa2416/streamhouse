@@ -1,4 +1,3 @@
----
 # Source: streamhouse/templates/postgresql/secret.yaml
 apiVersion: v1
 kind: Secret
@@ -41,6 +40,25 @@ metadata:
   namespace: streamhouse-data
 spec:
   clusterIP: None
+  selector:
+    app: streamhouse
+    component: postgresql
+  ports:
+    - name: postgresql
+      port: 5432
+      targetPort: 5432
+---
+# Source: streamhouse/templates/postgresql/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgresql-external
+  namespace: streamhouse-data
+  labels:
+    app: streamhouse
+    component: postgresql
+spec:
+  type: LoadBalancer
   selector:
     app: streamhouse
     component: postgresql
@@ -112,6 +130,7 @@ spec:
         name: data
       spec:
         accessModes:
+          
           - ReadWriteOnce
         storageClassName: standard
         resources:
