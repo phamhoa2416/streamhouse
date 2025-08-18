@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'application'
 }
 
 group = 'com.example'
@@ -59,6 +60,17 @@ dependencies {
     implementation "org.apache.logging.log4j:log4j-api:${log4jVersion}"
     implementation "org.apache.logging.log4j:log4j-core:${log4jVersion}"
     implementation "org.apache.logging.log4j:log4j-slf4j-impl:${log4jVersion}"
+
+    implementation "org.postgresql:postgresql:42.7.3"
+    implementation 'com.github.javafaker:javafaker:1.0.2'
+    implementation 'io.github.cdimascio:dotenv-java:3.0.0'
+
+    compileOnly 'org.projectlombok:lombok:1.18.34'
+    annotationProcessor 'org.projectlombok:lombok:1.18.34'
+}
+
+application {
+    mainClass = 'com.example.Main'
 }
 
 test {
