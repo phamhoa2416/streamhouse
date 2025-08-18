@@ -1,17 +1,27 @@
 package com.example;
 
-//TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
-// click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
+import com.example.generator.CustomerDataGenerator;
+import com.example.model.Customer;
+import com.example.seeder.CustomerDataSeeder;
+import com.example.utils.DatabaseConnector;
+
+import java.sql.Connection;
+
 public class Main {
     public static void main(String[] args) {
-        //TIP Press <shortcut actionId="ShowIntentionActions"/> with your caret at the highlighted text
-        // to see how IntelliJ IDEA suggests fixing it.
-        System.out.printf("Hello and welcome!");
+        try (Connection conn = DatabaseConnector.getConnection()) {
+            System.out.println("Connected to PostgreSQL successfully!");
 
-        for (int i = 1; i <= 5; i++) {
-            //TIP Press <shortcut actionId="Debug"/> to start debugging your code. We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/> breakpoint
-            // for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>.
-            System.out.println("i = " + i);
+            while (true) {
+                Customer customer = CustomerDataGenerator.generateCustomer();
+                System.out.println("Generated Customer: " + customer);
+                CustomerDataSeeder.insertCustomer(conn, customer);
+
+                Thread.sleep(2000);
+            }
+        } catch (Exception e) {
+            System.err.println("Error running data seeder: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }
