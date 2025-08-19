@@ -30,18 +30,73 @@ kafka:
     replicationFactor: 3
     minInSyncReplicas: 2
 
-#flink:
-#  enabled: true
-#  jobmanager:
-#    replicas: 1
-#    service:
-#      type: ClusterIP
-#      port: 8081
-#  taskmanager:
-#    replicas: 1
-#    slots: 8
-#  sqlClient:
-#    enabled: true
+flink:
+  image:
+    repository: phamviethoa2416/flink-realtime-lakehouse
+    tag: "v1.0.0"
+    pullPolicy: IfNotPresent
+
+  persistence:
+    enabled: true
+    checkpoints:
+      size: 5Gi
+      storageClass: standard
+      mountPath: /flink-checkpoints
+    savepoints:
+      size: 5Gi
+      storageClass: standard
+      mountPath: /flink-savepoints
+  jobmanager:
+    replicas: 2
+    resources:
+      requests:
+        memory: 2Gi
+        cpu: 1000m
+      limits:
+        memory: 4Gi
+        cpu: 2000m
+    service:
+      type: LoadBalancer
+      ports:
+        rpc: 6123
+        blob: 6124
+        query: 6125
+        web: 8081
+    config:
+      heapSize: 1.5g
+      high-availability: kubernetes
+      high-availability.storageDir: file:///flink-checkpoints/ha
+      high-availability.cluster-id: flink-realtime-lakehouse
+    nodeSelector: { }
+    tolerations: [ ]
+    affinity: { }
+
+  taskmanager:
+    replicas: 4
+    resources:
+      requests:
+        memory: 8Gi
+        cpu: 4000m
+      limits:
+        memory: 16Gi
+        cpu: 8000m
+    config:
+      heapSize: 4g
+      numberOfTaskSlots: 4
+    nodeSelector: { }
+    tolerations: [ ]
+    affinity: { }
+
+  sqlClient:
+    enabled: true
+    replicas: 1
+    resources:
+      requests:
+        memory: 1Gi
+        cpu: 500m
+      limits:
+        memory: 2Gi
+        cpu: 1000m
 
 postgres:
   image:
