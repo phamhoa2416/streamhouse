@@ -1,0 +1,320 @@
+---
+# Source: streamhouse/templates/flink/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: flink-service-account
+  namespace: streamhouse-system
+---
+# Source: streamhouse/templates/flink/serviceaccount.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: flink-role
+  namespace: streamhouse-system
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "services", "configmaps"]
+    verbs: ["get", "list", "watch", "create", "delete", "patch", "update"]
+  - apiGroups: ["apps"]
+    resources: ["statefulsets", "deployments"]
+    verbs: ["get", "list", "watch"]
+---
+# Source: streamhouse/templates/flink/serviceaccount.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: flink-role-binding
+  namespace: streamhouse-system
+subjects:
+  - kind: ServiceAccount
+    name: flink-service-account
+    namespace: streamhouse-system
+roleRef:
+  kind: Role
+  name: flink-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# Source: streamhouse/templates/flink/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: flink-config
+  namespace: streamhouse-system
+  labels:
+    app: streamhouse
+    component: flink
+data:
+  flink-conf.yaml: |
+    cluster.id: flink-realtime-lakehouse
+
+    jobmanager.rpc.address: flink-jobmanager
+    jobmanager.rpc.port: 6123
+    jobmanager.heap.size: 1536m
+    taskmanager.heap.size: 4096m
+    taskmanager.numberOfTaskSlots: 4
+
+    high-availability: kubernetes
+    high-availability.storageDir: s3a://flink-ha/metadata
+    high-availability.cluster-id: flink-realtime-lakehouse
+    kubernetes.cluster-id: flink-realtime-lakehouse
+    kubernetes.namespace: streamhouse-system
+    kubernetes.jobmanager.service-account: flink-service-account
+
+    state.backend: rocksdb
+    state.backend.incremental: true
+    state.checkpoints.dir: s3a://flink-checkpoints/
+    state.savepoints.dir: s3a://flink-savepoints/
+
+    # Tuning cho RocksDB (tuỳ workload)
+    state.backend.rocksdb.memory.managed: true
+    state.backend.rocksdb.writebuffer.size: 64mb
+    state.backend.rocksdb.writebuffer.count: 3
+    state.backend.rocksdb.block-cache.size: 512mb
+    state.backend.rocksdb.compaction.style: universal
+    state.backend.rocksdb.thread.number: 4
+
+    taskmanager.data.port: 6122
+    taskmanager.rpc.port: 6120
+    taskmanager.bind-host: 0.0.0.0
+
+    taskmanager.network.memory.fraction: 0.1
+    taskmanager.network.memory.min: 64mb
+    taskmanager.network.memory.max: 1gb
+
+    taskmanager.data.bind-port: 6122-6125
+
+    rest.port: 8081
+    jobmanager.web.submit.enable: true
+
+    blob.server.port: 6124
+    query.server.port: 6125
+    parallelism.default: 4
+    heartbeat.timeout: 10000
+    heartbeat.interval: 5000
+
+    fs.s3a.endpoint: http://minio.streamhouse-data.svc.cluster.local:9000
+    fs.s3a.access.key: minio-admin
+    fs.s3a.secret.key: minio-password
+    fs.s3a.path.style.access: true
+
+  core-site.xml: |
+    <configuration>
+        <property>
+            <name>fs.s3a.endpoint</name>
+            <value>http://minio.streamhouse-data.svc.cluster.local:9000</value>
+        </property>
+
+        <property>
+            <name>fs.s3a.access.key</name>
+            <value>minio-admin</value>
+        </property>
+
+        <property>
+            <name>fs.s3a.secret.key</name>
+            <value>minio-password</value>
+        </property>
+
+        <property>
+            <name>fs.s3a.path.style.access</name>
+            <value>true</value>
+        </property>
+    </configuration>
+---
+# Source: streamhouse/templates/flink/jobmanager-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: flink-jobmanager-headless
+  namespace: streamhouse-system
+  labels:
+    app: streamhouse
+    component: flink-jobmanager
+spec:
+  clusterIP: None
+  ports:
+    - name: rpc
+      port: 6123
+      targetPort: 6123
+    - name: blob
+      port: 6124
+      targetPort: 6124
+    - name: query
+      port: 6125
+      targetPort: 6125
+    - name: web
+      port: 8081
+      targetPort: 8081
+  selector:
+    app: streamhouse
+    component: flink-jobmanager
+---
+# Source: streamhouse/templates/flink/jobmanager-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: flink-jobmanager
+  namespace: streamhouse-system
+  labels:
+    app: streamhouse
+    component: flink-jobmanager
+spec:
+  type: LoadBalancer
+  ports:
+    - name: rpc
+      port: 6123
+      targetPort: 6123
+    - name: blob
+      port: 6124
+      targetPort: 6124
+    - name: query
+      port: 6125
+      targetPort: 6125
+    - name: web
+      port: 8081
+      targetPort: 8081
+  selector:
+    app: streamhouse
+    component: flink-jobmanager
+---
+# Source: streamhouse/templates/flink/jobmanager-deployment.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: flink-jobmanager
+  namespace: streamhouse-system
+  labels:
+    app: streamhouse
+    component: flink-jobmanager
+spec:
+  serviceName: flink-jobmanager-headless
+  replicas: 2
+  selector:
+    matchLabels:
+      app: streamhouse
+      component: flink-jobmanager
+  template:
+    metadata:
+      labels:
+        app: streamhouse
+        component: flink-jobmanager
+    spec:
+      serviceAccountName: flink-service-account
+      securityContext:
+        fsGroup: 9999
+        runAsUser: 9999
+      containers:
+        - name: flink-jobmanager
+          image: phamviethoa2416/flink-realtime-lakehouse:v1.0.0
+          imagePullPolicy: IfNotPresent
+          args: [ "jobmanager" ]
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              value: "minio-admin"
+            - name: AWS_SECRET_ACCESS_KEY
+              value: "minio-password"
+            - name: AWS_REGION
+              value: "us-east-1"
+          ports:
+            - name: rpc
+              containerPort: 6123
+              protocol: TCP
+            - name: blob
+              containerPort: 6124
+              protocol: TCP
+            - name: web
+              containerPort: 8081
+              protocol: TCP
+            - name: query
+              containerPort: 6125
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /opt/flink/conf
+              name: flink-config
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      volumes:
+        - name: flink-config
+          configMap:
+            name: flink-config
+---
+# Source: streamhouse/templates/flink/taskmanager-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flink-taskmanager
+  namespace: streamhouse-system
+  labels:
+    app: streamhouse
+    component: flink-taskmanager
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: streamhouse
+      component: flink-taskmanager
+  template:
+    metadata:
+      labels:
+        app: streamhouse
+        component: flink-taskmanager
+    spec:
+      serviceAccountName: flink-service-account
+      securityContext:
+        fsGroup: 9999
+        runAsUser: 9999
+      containers:
+        - name: flink-taskmanager
+          image: phamviethoa2416/flink-realtime-lakehouse:v1.0.0
+          imagePullPolicy: IfNotPresent
+          args: ["taskmanager"]
+          ports:
+            - name: rpc
+              containerPort: 6120
+            - name: data
+              containerPort: 6122
+            - name: data-range
+              containerPort: 6123
+            - name: data-range2
+              containerPort: 6124
+            - name: data-range3
+              containerPort: 6125
+          resources:
+            requests:
+              cpu: 4000m
+              memory: 8Gi
+            limits:
+              cpu: 8000m
+              memory: 16Gi
+          volumeMounts:
+            - mountPath: /opt/flink/conf
+              name: flink-config
+          # Probes cho TM thường không bắt buộc; nếu muốn có thể dùng tcpSocket đơn giản
+          # readinessProbe:
+          #   tcpSocket:
+          #     port: 6122
+          #   initialDelaySeconds: 20
+          #   periodSeconds: 10
+          # livenessProbe:
+          #   tcpSocket:
+          #     port: 6122
+          #   initialDelaySeconds: 60
+          #   periodSeconds: 30
+      volumes:
+        - name: flink-config
+          configMap:
+            name: flink-config
