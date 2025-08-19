@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: flink-jobmanager
+  namespace: {{ .Values.namespaces.system }}
+  labels:
+    app: {{ .Values.global.appName }}
+    component: flink-jobmanager
+spec:
+  serviceName: flink-jobmanager-headless
+  replicas: {{ .Values.flink.jobmanager.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.global.appName }}
+      component: flink-jobmanager
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.global.appName }}
+        component: flink-jobmanager
+    spec:
+      serviceAccountName: flink-service-account
+      securityContext:
+        fsGroup: 9999
+        runAsUser: 9999
+      containers:
+        - name: flink-jobmanager
+          image: {{ .Values.flink.image.repository }}:{{ .Values.flink.image.tag}}
+          imagePullPolicy: {{ .Values.flink.image.pullPolicy }}
+          args: [ "jobmanager" ]
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              value: {{ .Values.minio.auth.rootUser | quote }}
+            - name: AWS_SECRET_ACCESS_KEY
+              value: {{ .Values.minio.auth.rootPassword | quote }}
+            - name: AWS_REGION
+              value: {{ .Values.minio.config.region | quote }}
+          ports:
+            - name: rpc
+              containerPort: {{ .Values.flink.jobmanager.service.ports.rpc }}
+              protocol: TCP
+            - name: blob
+              containerPort: {{ .Values.flink.jobmanager.service.ports.blob }}
+              protocol: TCP
+            - name: web
+              containerPort: {{ .Values.flink.jobmanager.service.ports.web }}
+              protocol: TCP
+            - name: query
+              containerPort: {{ .Values.flink.jobmanager.service.ports.query }}
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /opt/flink/conf
+              name: flink-config
+{{/*          readinessProbe:*/}}
+{{/*            httpGet:*/}}
+{{/*              path: /overview*/}}
+{{/*              port: 8081*/}}
+{{/*            initialDelaySeconds: 30*/}}
+{{/*            periodSeconds: 10*/}}
+{{/*            timeoutSeconds: 5*/}}
+{{/*            failureThreshold: 3*/}}
+{{/*          livenessProbe:*/}}
+{{/*            httpGet:*/}}
+{{/*              path: /overview*/}}
+{{/*              port: 8081*/}}
+{{/*            initialDelaySeconds: 30*/}}
+{{/*            periodSeconds: 30*/}}
+{{/*            timeoutSeconds: 5*/}}
+{{/*            failureThreshold: 3*/}}
+      volumes:
+        - name: flink-config
+          configMap:
+            name: flink-config
