@@ -19,6 +19,8 @@ spec:
         app: {{ .Values.global.appName }}
         component: kafka
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: minikube
       containers:
         - name: kafka
           image: {{ .Values.kafka.image.repository }}:{{ .Values.kafka.image.tag }}

@@ -61,6 +61,8 @@ spec:
         app: streamhouse
         component: kafka
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: minikube
       containers:
         - name: kafka
           image: confluentinc/cp-kafka:7.6.6
