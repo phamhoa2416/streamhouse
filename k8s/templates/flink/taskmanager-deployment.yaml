@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flink-taskmanager
+  namespace: {{ .Values.namespaces.system }}
+  labels:
+    app: {{ .Values.global.appName }}
+    component: flink-taskmanager
+spec:
+  replicas: {{ .Values.flink.taskmanager.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.global.appName }}
+      component: flink-taskmanager
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.global.appName }}
+        component: flink-taskmanager
+    spec:
+      serviceAccountName: flink-service-account
+      securityContext:
+        fsGroup: 9999
+        runAsUser: 9999
+      containers:
+        - name: flink-taskmanager
+          image: {{ .Values.flink.image.repository }}:{{ .Values.flink.image.tag }}
+          imagePullPolicy: {{ .Values.flink.image.pullPolicy }}
+          args: ["taskmanager"]
+          ports:
+            - name: rpc
+              containerPort: 6120
+            - name: data
+              containerPort: 6122
+            - name: data-range
+              containerPort: 6123
+            - name: data-range2
+              containerPort: 6124
+            - name: data-range3
+              containerPort: 6125
+          resources:
+            requests:
+              cpu: {{ .Values.flink.taskmanager.resources.requests.cpu }}
+              memory: {{ .Values.flink.taskmanager.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.flink.taskmanager.resources.limits.cpu }}
+              memory: {{ .Values.flink.taskmanager.resources.limits.memory }}
+          volumeMounts:
+            - mountPath: /opt/flink/conf
+              name: flink-config
+          # Probes cho TM thường không bắt buộc; nếu muốn có thể dùng tcpSocket đơn giản
+          # readinessProbe:
+          #   tcpSocket:
+          #     port: 6122
+          #   initialDelaySeconds: 20
+          #   periodSeconds: 10
+          # livenessProbe:
+          #   tcpSocket:
+          #     port: 6122
+          #   initialDelaySeconds: 60
+          #   periodSeconds: 30
+      volumes:
+        - name: flink-config
+          configMap:
+            name: flink-config
