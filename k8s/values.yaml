@@ -1,7 +1,7 @@
 global:
   appName: "streamhouse"
   networkPolicy:
-    enabled: false
+    enabled: true
 
 namespaces:
   system: "streamhouse-system"
@@ -14,7 +14,7 @@ kafka:
     repository: "confluentinc/cp-kafka"
     tag: "7.6.6"
     pullPolicy: IfNotPresent
-  replicas: 3
+  replicas: 2
   persistence:
     enabled: true
     size: 5Gi
@@ -24,6 +24,13 @@ kafka:
     ports:
       broker: 9092
       controller: 9093
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 300m
+    limits:
+      memory: 1Gi
+      cpu: 600m
   config:
     clusterId: V9QT8q2XR1aMR_udoY14hw
     numPartitions: 3
@@ -47,14 +54,14 @@ flink:
       storageClass: standard
       mountPath: /flink-savepoints
   jobmanager:
-    replicas: 2
+    replicas: 1
     resources:
       requests:
+        memory: 1Gi
+        cpu: 500m
+      limits:
         memory: 2Gi
         cpu: 1000m
-      limits:
-        memory: 4Gi
-        cpu: 2000m
     service:
       type: LoadBalancer
       ports:
@@ -72,16 +79,16 @@ flink:
     affinity: { }
 
   taskmanager:
-    replicas: 4
+    replicas: 2
     resources:
       requests:
-        memory: 8Gi
-        cpu: 4000m
+        memory: 2Gi
+        cpu: 1
       limits:
-        memory: 16Gi
-        cpu: 8000m
+        memory: 4Gi
+        cpu: 2
     config:
-      heapSize: 4g
+      heapSize: 2g
       numberOfTaskSlots: 4
     nodeSelector: { }
     tolerations: [ ]
@@ -92,11 +99,11 @@ flink:
     replicas: 1
     resources:
       requests:
+        memory: 512Mi
+        cpu: 250m
+      limits:
         memory: 1Gi
         cpu: 500m
-      limits:
-        memory: 2Gi
-        cpu: 1000m
 
 postgres:
   image:
@@ -109,14 +116,14 @@ postgres:
     postgresDB: banking-system
   resources:
     limits:
-      cpu: 1000m
-      memory: 2Gi
-    requests:
       cpu: 500m
       memory: 1Gi
+    requests:
+      cpu: 250m
+      memory: 512Mi
   persistence:
     enabled: true
-    size: 30Gi
+    size: 10Gi
     storageClass: standard
     accessModes:
       - ReadWriteOnce
@@ -132,7 +139,7 @@ minio:
     pullPolicy: IfNotPresent
   mode:
     type: distributed
-    replicas: 4
+    replicas: 2
   auth:
     rootUser: minio-admin
     rootPassword: minio-password
@@ -145,10 +152,16 @@ minio:
     ports:
       api: 9000
       console: 9001
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 250m
+    limits:
+      memory: 1Gi
+      cpu: 500m
   config:
     region: ap-southeast-1
     browser: "on"
-  resources: {}
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -164,17 +177,17 @@ starrocks:
       repository: starrocks/fe-ubuntu
       tag: "latest"
       pullPolicy: IfNotPresent
-    replicas: 3
+    replicas: 2
     resources:
       requests:
+        memory: 1Gi
+        cpu: 250m
+      limits:
         memory: 2Gi
         cpu: 500m
-      limits:
-        memory: 4Gi
-        cpu: 1000m
     persistence:
       enabled: true
-      size: 15Gi
+      size: 5Gi
       storageClass: standard
     service:
       type: ClusterIP
@@ -188,17 +201,17 @@ starrocks:
       repository: starrocks/be-ubuntu
       tag: "latest"
       pullPolicy: IfNotPresent
-    replicas: 3
+    replicas: 2
     resources:
       requests:
+        memory: 2Gi
+        cpu: 500m
+      limits:
         memory: 4Gi
         cpu: 1000m
-      limits:
-        memory: 8Gi
-        cpu: 2000m
     persistence:
       enabled: true
-      size: 30Gi
+      size: 15Gi
       storageClass: standard
     service:
       type: ClusterIP
@@ -229,20 +242,20 @@ trino:
     replicas: 1
     resources:
       requests:
+        memory: 512Mi
+        cpu: 250m
+      limits:
+        memory: 1Gi
+        cpu: 500m
+  worker:
+    replicas: 2
+    resources:
+      requests:
         memory: 1Gi
         cpu: 500m
       limits:
         memory: 2Gi
         cpu: 1000m
-  worker:
-    replicas: 3
-    resources:
-      requests:
-        memory: 2Gi
-        cpu: 1000m
-      limits:
-        memory: 4Gi
-        cpu: 2000m
   image:
     repository: trinodb/trino
     tag: 475
