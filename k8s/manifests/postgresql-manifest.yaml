@@ -1,3 +1,4 @@
+---
 # Source: streamhouse/templates/postgresql/secret.yaml
 apiVersion: v1
 kind: Secret
@@ -117,14 +118,15 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /var/lib/postgresql/data
-          resources:
-            
+          resources: 
             limits:
-              cpu: 1000m
-              memory: 2Gi
-            requests:
               cpu: 500m
               memory: 1Gi
+            requests:
+              cpu: 250m
+              memory: 512Mi
+      nodeSelector:
+        kubernetes.io/hostname: streamhouse-m02
   volumeClaimTemplates:
     - metadata:
         name: data
@@ -135,4 +137,4 @@ spec:
         storageClassName: standard
         resources:
           requests:
-            storage: 30Gi
+            storage: 10Gi
