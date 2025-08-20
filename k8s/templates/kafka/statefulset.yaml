@@ -20,7 +20,7 @@ spec:
         component: kafka
     spec:
       nodeSelector:
-        kubernetes.io/hostname: minikube
+        kubernetes.io/hostname: streamhouse
       containers:
         - name: kafka
           image: {{ .Values.kafka.image.repository }}:{{ .Values.kafka.image.tag }}
@@ -35,6 +35,7 @@ spec:
             - |
               export KAFKA_NODE_ID=$(hostname | awk -F'-' '{print $NF}');
               exec /etc/confluent/docker/run
+          resources: {{ toYaml .Values.kafka.resources | nindent 12 }}
           env:
             - name: MY_POD_NAME
               valueFrom:
