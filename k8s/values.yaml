@@ -139,7 +139,7 @@ minio:
     pullPolicy: IfNotPresent
   mode:
     type: distributed
-    replicas: 2
+    replicas: 3
   auth:
     rootUser: minio-admin
     rootPassword: minio-password
