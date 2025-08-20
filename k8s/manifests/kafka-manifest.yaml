@@ -62,7 +62,7 @@ spec:
         component: kafka
     spec:
       nodeSelector:
-        kubernetes.io/hostname: minikube
+        kubernetes.io/hostname: streamhouse
       containers:
         - name: kafka
           image: confluentinc/cp-kafka:7.6.6
@@ -77,6 +77,13 @@ spec:
             - |
               export KAFKA_NODE_ID=$(hostname | awk -F'-' '{print $NF}');
               exec /etc/confluent/docker/run
+          resources: 
+            limits:
+              cpu: 600m
+              memory: 1Gi
+            requests:
+              cpu: 300m
+              memory: 512Mi
           env:
             - name: MY_POD_NAME
               valueFrom:
