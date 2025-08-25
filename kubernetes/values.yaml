@@ -1,12 +1,14 @@
 global:
   appName: "streamhouse"
+  namespaces:
+    system: "streamhouse-system"
+    data: "streamhouse-data"
+    monitoring: "streamhouse-monitoring"
   networkPolicy:
     enabled: true
 
-namespaces:
-  system: "streamhouse-system"
-  data: "streamhouse-data"
-  monitoring: "streamhouse-monitoring"
+minio:
+  namespace: streamhouse-data
 
 kafka:
   enabled: true
@@ -131,41 +133,6 @@ postgres:
     type: ClusterIP
     port: 5432
 
-minio:
-  enabled: true
-  image:
-    repository: minio/minio
-    tag: "latest"
-    pullPolicy: IfNotPresent
-  mode:
-    type: distributed
-    replicas: 3
-  auth:
-    rootUser: minio-admin
-    rootPassword: minio-password
-  persistence:
-    enabled: true
-    size: 5Gi
-    storageClass: standard
-  service:
-    type: ClusterIP
-    ports:
-      api: 9000
-      console: 9001
-  resources:
-    requests:
-      memory: 512Mi
-      cpu: 250m
-    limits:
-      memory: 1Gi
-      cpu: 500m
-  config:
-    region: ap-southeast-1
-    browser: "on"
-  nodeSelector: {}
-  tolerations: []
-  affinity: {}
-
 starrocks:
   auth:
     enabled: true
@@ -275,3 +242,29 @@ trino:
       periodSeconds: 10
       timeoutSeconds: 10
       failureThreshold: 3
+
+prometheus:
+  image:
+    repository: prom/prometheus
+    tag: "v2.51.0"
+    pullPolicy: IfNotPresent
+  replicas: 1
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: standard
+    accessModes:
+      - ReadWriteOnce
+  service:
+    type: ClusterIP
+    port: 9090
+    targetPort: 9090
+  resources:
+    requests:
+      memory: 1Gi
+      cpu: 500m
+    limits:
+      memory: 2Gi
+      cpu: 1000m
+  retention:
+    time: 15d
