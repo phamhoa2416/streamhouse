@@ -18,6 +18,10 @@ spec:
         app: trino
         role: coordinator
     spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
       containers:
         - name: trino-coordinator
           image: "{{ .Values.trino.image.repository }}:{{ .Values.trino.image.tag }}"
@@ -56,6 +60,8 @@ spec:
           volumeMounts:
             - mountPath: /etc/trino
               name: config
+            - mountPath: /var/trino/data
+              name: data
       volumes:
         - name: config
           configMap:
@@ -71,4 +77,12 @@ spec:
                 path: node.properties
               - key: paimon.properties
                 path: catalog/paimon.properties
-
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: {{ .Values.trino.persistence.storageClass }}
+        resources:
+          requests:
+            storage: {{ .Values.trino.persistence.size }}
