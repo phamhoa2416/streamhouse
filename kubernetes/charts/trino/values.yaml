@@ -35,5 +35,5 @@ trino:
     storageClass: standard
 
   credentials:
-    accessKey: minioadmin
-    secretKey: minio
+    accessKey: minio-admin
+    secretKey: minio-password
