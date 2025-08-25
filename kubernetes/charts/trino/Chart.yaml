@@ -3,4 +3,4 @@ name: trino
 description: Trino distributed SQL query engine
 type: application
 version: 1.0.0
-appVersion: "475"
+appVersion: "427"
