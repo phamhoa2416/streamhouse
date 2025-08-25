@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: trino-coordinator
+  namespace: {{ .Values.global.namespaces.system }}
+  labels:
+    app: trino
+    role: coordinator
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: {{ .Values.trino.service.ports.http }}
+      targetPort: {{ .Values.trino.service.ports.http }}
+      protocol: TCP
+  selector:
+    app: trino
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: trino-coordinator-headless
+  namespace: {{ .Values.global.namespaces.system }}
+  labels:
+    app: trino
+    role: coordinator
+spec:
+  clusterIP: None
+  ports:
+    - name: http
+      port: {{ .Values.trino.service.ports.http }}
+      targetPort: {{ .Values.trino.service.ports.http }}
+      protocol: TCP
+  selector:
+    app: trino
+    role: coordinator

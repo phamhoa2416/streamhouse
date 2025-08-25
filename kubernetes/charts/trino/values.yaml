@@ -1,0 +1,39 @@
+trino:
+  enabled: true
+  coordinator:
+    replicas: 1
+    resources:
+      requests:
+        memory: 512Mi
+        cpu: 250m
+      limits:
+        memory: 1Gi
+        cpu: 500m
+
+  worker:
+    replicas: 2
+    resources:
+      requests:
+        memory: 1Gi
+        cpu: 500m
+      limits:
+        memory: 2Gi
+        cpu: 1000m
+
+  image:
+    repository: phamviethoa2416/trino-realtime-lakehouse
+    tag: v1.0.0
+    pullPolicy: IfNotPresent
+
+  service:
+    type: ClusterIP
+    ports:
+      http: 8080
+
+  persistence:
+    size: 5Gi
+    storageClass: standard
+
+  credentials:
+    accessKey: minioadmin
+    secretKey: minio
