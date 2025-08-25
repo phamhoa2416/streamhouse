@@ -8,7 +8,7 @@ global:
     enabled: true
 
 minio:
-  namespace: streamhouse-data
+  enabled: true
 
 kafka:
   enabled: true
@@ -107,31 +107,8 @@ flink:
         memory: 1Gi
         cpu: 500m
 
-postgres:
-  image:
-    repository: postgres
-    tag: "15.4-alpine"
-    pullPolicy: IfNotPresent
-  auth:
-    postgresUser: phamviethoa
-    postgresPassword: streamhouse-postgres
-    postgresDB: banking-system
-  resources:
-    limits:
-      cpu: 500m
-      memory: 1Gi
-    requests:
-      cpu: 250m
-      memory: 512Mi
-  persistence:
-    enabled: true
-    size: 10Gi
-    storageClass: standard
-    accessModes:
-      - ReadWriteOnce
-  service:
-    type: ClusterIP
-    port: 5432
+postgresql:
+  enabled: true
 
 starrocks:
   auth:
@@ -205,43 +182,6 @@ starrocks:
 
 trino:
   enabled: true
-  coordinator:
-    replicas: 1
-    resources:
-      requests:
-        memory: 512Mi
-        cpu: 250m
-      limits:
-        memory: 1Gi
-        cpu: 500m
-  worker:
-    replicas: 2
-    resources:
-      requests:
-        memory: 1Gi
-        cpu: 500m
-      limits:
-        memory: 2Gi
-        cpu: 1000m
-  image:
-    repository: trinodb/trino
-    tag: 475
-    pullPolicy: IfNotPresent
-  service:
-    type: ClusterIP
-    ports:
-      http: 8080
-  probe:
-    readiness:
-      initialDelaySeconds: 30
-      periodSeconds: 10
-      timeoutSeconds: 5
-      failureThreshold: 3
-    liveness:
-      initialDelaySeconds: 300
-      periodSeconds: 10
-      timeoutSeconds: 10
-      failureThreshold: 3
 
 prometheus:
   image:
