@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgresql
+  namespace: {{ .Values.global.namespaces.data }}
+  labels:
+    app: postgresql
+spec:
+  type: {{ .Values.postgres.service.type }}
+  selector:
+    app: postgresql
+  ports:
+    - name: postgresql
+      port: {{ .Values.postgres.service.port }}
+      targetPort: {{ .Values.postgres.service.port }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgresql-headless
+  namespace: {{ .Values.global.namespaces.data }}
+  labels:
+    app: postgresql
+spec:
+  clusterIP: None
+  selector:
+    app: postgresql
+  ports:
+    - name: postgresql
+      port: {{ .Values.postgres.service.port }}
+      targetPort: {{ .Values.postgres.service.port }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgresql-external
+  namespace: {{ .Values.global.namespaces.data }}
+  labels:
+    app: postgresql
+spec:
+  type: LoadBalancer
+  selector:
+    app: postgresql
+  ports:
+    - name: postgresql
+      port: {{ .Values.postgres.service.port }}
+      targetPort: {{ .Values.postgres.service.port }}

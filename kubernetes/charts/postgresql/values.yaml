@@ -1,0 +1,28 @@
+postgres:
+  image:
+    repository: postgres
+    tag: "15.4-alpine"
+    pullPolicy: IfNotPresent
+
+  auth:
+    postgresUser: phamviethoa
+    postgresPassword: streamhouse-postgres
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 1Gi
+    requests:
+      cpu: 250m
+      memory: 512Mi
+
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: standard
+    accessModes:
+      - ReadWriteOnce
+
+  service:
+    type: ClusterIP
+    port: 5432
