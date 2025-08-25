@@ -177,7 +177,7 @@ spec:
     app: streamhouse
     component: flink-jobmanager
 ---
-# Source: streamhouse/templates/flink/jobmanager-deployment.yaml
+# Source: streamhouse/templates/flink/jobmanager-statefulset.yaml
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -252,7 +252,7 @@ spec:
           configMap:
             name: flink-config
 ---
-# Source: streamhouse/templates/flink/taskmanager-deployment.yaml
+# Source: streamhouse/templates/flink/taskmanager-statefulset.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
