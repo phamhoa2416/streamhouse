@@ -4,3 +4,22 @@ description: Streaming lakehouse
 type: application
 version: 0.1.0
 appVersion: "1.0"
+dependencies:
+  - name: flink
+    version: 1.0.0
+    condition: flink.enabled
+  - name: kafka
+    version: 1.0.0
+    condition: kafka.enabled
+  - name: minio
+    version: 1.0.0
+    condition: minio.enabled
+  - name: postgresql
+    version: 1.0.0
+    condition: postgresql.enabled
+  - name: starrocks
+    version: 1.0.0
+    condition: starrocks.enabled
+  - name: trino
+    version: 1.0.0
+    condition: trino.enabled
