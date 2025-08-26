@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: starrocks-be
+  namespace: {{ .Values.global.namespaces.data }}
+  labels:
+    app: starrocks
+    component: backend
+spec:
+  serviceName: starrocks-be-headless
+  replicas: {{ .Values.starrocks.backend.replicas }}
+  selector:
+    matchLabels:
+      app: starrocks
+      component: backend
+  template:
+    metadata:
+      labels:
+        app: starrocks
+        component: backend
+    spec:
+      initContainers:
+        - name: wait-for-fe
+          image: busybox:1.28
+          command: [ 'sh', '-c', 'until nslookup starrocks-fe-headless.streamhouse-data.svc.cluster.local; do echo waiting for FE DNS; sleep 2; done' ]
+      containers:
+        - name: starrocks-be
+          image: "{{ .Values.starrocks.backend.image.repository }}:{{ .Values.starrocks.backend.image.tag }}"
+          imagePullPolicy: {{ .Values.starrocks.backend.image.pullPolicy }}
+          ports:
+            - name: be
+              containerPort: {{ .Values.starrocks.backend.service.ports.be }}
+            - name: webserver
+              containerPort: {{ .Values.starrocks.backend.service.ports.webserver }}
+            - name: heartbeat
+              containerPort: {{ .Values.starrocks.backend.service.ports.heartbeat }}
+            - name: brpc
+              containerPort: {{ .Values.starrocks.backend.service.ports.brpc }}
+          env:
+            - name: JAVA_OPTS
+              value: "-Xms2g -Xmx2g"
+            - name: FE_ADDRESS
+              value: "starrocks-fe-headless.{{ .Values.global.namespaces.data}}.svc.cluster.local:{{ .Values.starrocks.frontend.service.ports.rpc }}"
+          resources: {{ toYaml .Values.starrocks.backend.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: {{ .Values.starrocks.backend.service.ports.webserver }}
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: {{ .Values.starrocks.backend.service.ports.webserver }}
+            initialDelaySeconds: 20
+            periodSeconds: 30
+          volumeMounts:
+            - mountPath: /opt/starrocks/be/storage
+              name: data
+            - mountPath: /opt/starrocks/be/conf/be.conf
+              subPath: be.conf
+              name: be-config
+      volumes:
+        - name: be-config
+          configMap:
+            name: starrocks-be-config
+            items:
+              - key: be.conf
+                path: be.conf
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: {{ .Values.starrocks.backend.persistence.storageClass }}
+        resources:
+          requests:
+            storage: {{ .Values.starrocks.backend.persistence.size }}

@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: starrocks-fe
+  namespace: {{ .Values.global.namespaces.data }}
+  labels:
+    app: starrocks
+    component: frontend
+spec:
+  serviceName: starrocks-fe-headless
+  replicas: {{ .Values.starrocks.frontend.replicas }}
+  selector:
+    matchLabels:
+      app: starrocks
+      component: frontend
+  template:
+    metadata:
+      labels:
+        app: starrocks
+        component: frontend
+    spec:
+      initContainers:
+        - name: wait-for-dns
+          image: busybox:1.28
+          command: ['sh', '-c', 'until nslookup starrocks-fe-headless.streamhouse-data.svc.cluster.local; do echo waiting for DNS; sleep 2; done']
+      containers:
+        - name: starrocks-fe
+          image: "{{ .Values.starrocks.frontend.image.repository }}:{{ .Values.starrocks.frontend.image.tag }}"
+          imagePullPolicy: {{ .Values.starrocks.frontend.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.starrocks.frontend.service.ports.http }}
+            - name: mysql
+              containerPort: {{ .Values.starrocks.frontend.service.ports.query }}
+            - name: rpc
+              containerPort: {{ .Values.starrocks.frontend.service.ports.rpc }}
+            - name: editlog
+              containerPort: {{ .Values.starrocks.frontend.service.ports.edit_log }}
+          env:
+            - name: FE_SERVERS
+              value: "starrocks-fe-0.starrocks-fe-headless:9020,starrocks-fe-1.starrocks-fe-headless:9020"
+            - name: FE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: FE_LEADER
+              value: "starrocks-fe-0.starrocks-fe-headless.{{ .Values.global.namespaces.data }}.svc.cluster.local:9010"
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: {{ .Values.starrocks.frontend.service.ports.http }}
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.starrocks.frontend.service.ports.http }}
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 5
+          volumeMounts:
+            - mountPath: /opt/starrocks/fe/meta
+              name: data
+            - mountPath: /opt/starrocks/fe/conf/fe.conf
+              name: fe-config
+              subPath: fe.conf
+          resources: {{ toYaml .Values.starrocks.frontend.resources | nindent 12 }}
+      volumes:
+        - name: fe-config
+          configMap:
+            name: starrocks-fe-config
+            items:
+              - key: fe.conf
+                path: fe.conf
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: {{ .Values.starrocks.frontend.persistence.storageClass }}
+        resources:
+          requests:
+            storage: {{ .Values.starrocks.frontend.persistence.size }}

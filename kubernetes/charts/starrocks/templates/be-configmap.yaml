@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: starrocks-be-config
+  namespace: {{ .Values.global.namespaces.data }}
+  labels:
+    name: starrocks
+    component: backend
+data:
+  be.conf: |
+    be_port = {{ .Values.starrocks.backend.service.ports.be }}
+    webserver_port = {{ .Values.starrocks.backend.service.ports.webserver }}
+    heartbeat_service_port = {{ .Values.starrocks.backend.service.ports.heartbeat }}
+    brpc_port = {{ .Values.starrocks.backend.service.ports.brpc }}
+    sys_log_level = INFO
+    default_rowset_type = beta
+
+    JAVA_OPTS = -Xmx2g -Xms2g -XX:+UseG1GC
+    frontend_address = starrocks-fe-headless:9020
+
+    mem_limit = 2g
+    storage_page_cache_limit = 1g

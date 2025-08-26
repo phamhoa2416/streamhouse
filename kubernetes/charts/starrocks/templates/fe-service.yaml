@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: starrocks-fe
+  namespace: {{ .Values.global.namespaces.data }}
+  labels:
+    app: starrocks
+    component: frontend
+spec:
+  type: {{ .Values.starrocks.frontend.service.type }}
+  selector:
+    app: starrocks
+    component: frontend
+  ports:
+    - name: http
+      port: {{ .Values.starrocks.frontend.service.ports.http }}
+      targetPort: {{ .Values.starrocks.frontend.service.ports.http }}
+      protocol: TCP
+    - name: mysql
+      port: {{ .Values.starrocks.frontend.service.ports.query }}
+      targetPort: {{ .Values.starrocks.frontend.service.ports.query }}
+      protocol: TCP
+    - name: rpc
+      port: {{ .Values.starrocks.frontend.service.ports.rpc }}
+      targetPort: {{ .Values.starrocks.frontend.service.ports.rpc }}
+      protocol: TCP
+    - name: editlog
+      port: {{ .Values.starrocks.frontend.service.ports.edit_log }}
+      targetPort: {{ .Values.starrocks.frontend.service.ports.edit_log }}
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: starrocks-fe-headless
+  namespace: {{ .Values.global.namespaces.data }}
+  labels:
+    app: starrocks
+    component: frontend
+spec:
+  clusterIP: None
+  selector:
+    app: starrocks
+    component: frontend
+  ports:
+    - name: http
+      port: {{ .Values.starrocks.frontend.service.ports.http }}
+      targetPort: {{ .Values.starrocks.frontend.service.ports.http }}
+      protocol: TCP
+    - name: mysql
+      port: {{ .Values.starrocks.frontend.service.ports.query }}
+      targetPort: {{ .Values.starrocks.frontend.service.ports.query }}
+      protocol: TCP
+    - name: rpc
+      port: {{ .Values.starrocks.frontend.service.ports.rpc }}
+      targetPort: {{ .Values.starrocks.frontend.service.ports.rpc }}
+      protocol: TCP
+    - name: editlog
+      port: {{ .Values.starrocks.frontend.service.ports.edit_log }}
+      targetPort: {{ .Values.starrocks.frontend.service.ports.edit_log }}
+      protocol: TCP

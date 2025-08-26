@@ -1,0 +1,6 @@
+apiVersion: v2
+name: starrocks
+description: StarRocks online analytical database for real-time analytics
+type: application
+version: 1.0.0
+appVersion: "latest"
