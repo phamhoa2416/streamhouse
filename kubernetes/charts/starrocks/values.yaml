@@ -1,13 +1,8 @@
 starrocks:
-#  auth:
-#    enabled: true
-#    user: starrocks
-#    password: streamhouse-starrocks
-#
   frontend:
     image:
       repository: starrocks/fe-ubuntu
-      tag: "3.3.0"
+      tag: "3.3.5"
       pullPolicy: IfNotPresent
 
     replicas: 2
@@ -36,7 +31,7 @@ starrocks:
   backend:
     image:
       repository: starrocks/be-ubuntu
-      tag: "latest"
+      tag: "3.3.5"
       pullPolicy: IfNotPresent
 
     replicas: 2
@@ -60,14 +55,3 @@ starrocks:
         webserver: 8040
         heartbeat: 9050
         brpc: 8060
-#  probe:
-#    readiness:
-#      initialDelaySeconds: 30
-#      periodSeconds: 10
-#      timeoutSeconds: 5
-#      failureThreshold: 3
-#    liveness:
-#      initialDelaySeconds: 300
-#      periodSeconds: 10
-#      timeoutSeconds: 10
-#      failureThreshold: 3
