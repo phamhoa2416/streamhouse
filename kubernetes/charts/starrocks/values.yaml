@@ -1,0 +1,57 @@
+starrocks:
+  frontend:
+    image:
+      repository: starrocks/fe-ubuntu
+      tag: "3.3.5"
+      pullPolicy: IfNotPresent
+
+    replicas: 2
+
+    resources:
+      requests:
+        memory: 2Gi
+        cpu: 500m
+      limits:
+        memory: 4Gi
+        cpu: 1000m
+
+    persistence:
+      enabled: true
+      size: 5Gi
+      storageClass: standard
+
+    service:
+      type: ClusterIP
+      ports:
+        http: 8030
+        rpc: 9020
+        query: 9030
+        edit_log: 9010
+
+  backend:
+    image:
+      repository: starrocks/be-ubuntu
+      tag: "3.3.5"
+      pullPolicy: IfNotPresent
+
+    replicas: 2
+
+    resources:
+      requests:
+        memory: 2Gi
+        cpu: 500m
+      limits:
+        memory: 4Gi
+        cpu: 1000m
+
+    persistence:
+      enabled: true
+      size: 15Gi
+      storageClass: standard
+    service:
+      type: ClusterIP
+      ports:
+        be: 9060
+        webserver: 8040
+        heartbeat: 9050
+        brpc: 8060

@@ -1,0 +1,80 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: trino-config
+  namespace: {{ .Values.global.namespaces.system }}
+  labels:
+    app: trino
+data:
+  jvm.config: |
+    -server
+    -Xmx1536m
+    -Xms1024m
+    -XX:+UseG1GC
+    -XX:G1HeapRegionSize=32M
+    -XX:+UseGCOverheadLimit
+    -XX:+ExplicitGCInvokesConcurrent
+    -XX:+HeapDumpOnOutOfMemoryError
+    -XX:+ExitOnOutOfMemoryError
+    -Duser.timezone=UTC
+
+  log.properties: |
+    io.trino=INFO
+
+    io.trino.plugin.jdbc=DEBUG
+    io.trino.plugin.hive=DEBUG
+    io.trino.plugin.iceberg=DEBUG
+    io.trino.plugin.paimon=DEBUG
+
+    io.trino.server.PluginManager=INFO
+    io.trino.metadata.DiscoveryNodeManager=INFO
+
+    io.trino.memory=INFO
+    io.trino.execution=INFO
+
+  coordinator.node.properties: |
+    node.environment=production
+    node.id=coordinator
+    node.data-dir=/data/trino
+    plugin.dir=/usr/lib/trino/plugin
+
+  worker.node.properties: |
+    node.environment=production
+    node.id=${ENV:NODE_ID}
+    node.data-dir=/data/trino
+    plugin.dir=/usr/lib/trino/plugin
+
+  coordinator.properties: |
+    coordinator=true
+    node-scheduler.include-coordinator=false
+    http-server.http.port=8080
+    query.max-memory=1GB
+    query.max-memory-per-node=512MB
+    query.max-total-memory=2GB
+    memory.heap-headroom-per-node=512MB
+    discovery-server.enabled=true
+    discovery.uri=http://trino-coordinator:8080
+
+    query.max-execution-time=4h
+    query.max-planning-time=10m
+    query.max-run-time=5h
+    query.client.timeout=5m
+
+  worker.properties: |
+    coordinator=false
+    http-server.http.port=8080
+    query.max-memory=2GB
+    query.max-total-memory=3GB
+    memory.heap-headroom-per-node=1GB
+    discovery.uri=http://trino-coordinator:8080
+
+  paimon.properties: |
+    connector.name=paimon
+
+    paimon.s3.endpoint=http://minio.{{ .Values.global.namespaces.data }}.svc.cluster.local:9000
+    paimon.s3.access-key=minio-admin
+    paimon.s3.secret-key=minio-password
+    paimon.s3.path-style-access=true
+    paimon.s3.warehouse=s3://warehouse
+    paimon.s3.region=ap-southeast-1
+    paimon.s3.ssl.enabled=false

@@ -1,0 +1,29 @@
+global:
+  appName: "streamhouse"
+  namespaces:
+    system: "streamhouse-system"
+    data: "streamhouse-data"
+    monitoring: "streamhouse-monitoring"
+  networkPolicy:
+    enabled: true
+
+minio:
+  enabled: true
+
+kafka:
+  enabled: true
+
+flink:
+  enabled: true
+
+postgresql:
+  enabled: true
+
+starrocks:
+  enabled: true
+
+trino:
+  enabled: true
+
+prometheus:
+  enabled: true

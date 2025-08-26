@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: flink-jobmanager
+  namespace: {{ .Values.global.namespaces.system }}
+  labels:
+    app: flink
+    component: jobmanager
+spec:
+  serviceName: flink-jobmanager-headless
+  replicas: {{ .Values.flink.jobmanager.replicas }}
+  selector:
+    matchLabels:
+      app: flink
+      component: jobmanager
+  template:
+    metadata:
+      labels:
+        app: flink
+        component: jobmanager
+    spec:
+      serviceAccountName: flink-service-account
+      containers:
+        - name: jobmanager
+          image: "{{ .Values.flink.image.repository }}:{{ .Values.flink.image.tag }}"
+          imagePullPolicy: {{ .Values.flink.image.pullPolicy }}
+          args: [ "jobmanager" ]
+          ports:
+            - name: rpc
+              containerPort: {{ .Values.flink.jobmanager.service.ports.rpc }}
+              protocol: TCP
+            - name: blob
+              containerPort: {{ .Values.flink.jobmanager.service.ports.blob }}
+              protocol: TCP
+            - name: web
+              containerPort: {{ .Values.flink.jobmanager.service.ports.web }}
+              protocol: TCP
+            - name: query
+              containerPort: {{ .Values.flink.jobmanager.service.ports.query }}
+              protocol: TCP
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: flink-s3-secrets
+                  key: aws-access-key
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: flink-s3-secrets
+                  key: aws-secret-key
+            - name: AWS_REGION
+              valueFrom:
+                secretKeyRef:
+                  name: flink-s3-secrets
+                  key: aws-region
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8081
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8081
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 5
+          volumeMounts:
+            - name: flink-config
+              mountPath: /opt/flink/conf/flink-conf.yaml
+              subPath: flink-conf.yaml
+            - name: flink-config
+              mountPath: /opt/flink/conf/core-site.xml
+              subPath: core-site.xml
+          resources: {{ toYaml .Values.flink.jobmanager.resources | nindent 12 }}
+      volumes:
+        - name: flink-config
+          configMap:
+            name: flink-config

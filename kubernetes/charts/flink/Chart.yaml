@@ -1,0 +1,6 @@
+apiVersion: v2
+name: flink
+description: Apache Flink for stream processing
+type: application
+version: 1.0.0
+appVersion: "1.20.2"

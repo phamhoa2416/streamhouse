@@ -1,0 +1,64 @@
+flink:
+  image:
+    repository: phamviethoa2416/flink-realtime-lakehouse
+    tag: "v1.0.0"
+    pullPolicy: IfNotPresent
+
+  persistence:
+    enabled: true
+    checkpoints:
+      size: 5Gi
+      storageClass: standard
+      mountPath: /flink-checkpoints
+    savepoints:
+      size: 5Gi
+      storageClass: standard
+      mountPath: /flink-savepoints
+
+  jobmanager:
+    replicas: 1
+    resources:
+      requests:
+        memory: 1Gi
+        cpu: 500m
+      limits:
+        memory: 2Gi
+        cpu: 1000m
+    service:
+      type: LoadBalancer
+      ports:
+        rpc: 6123
+        blob: 6124
+        query: 6125
+        web: 8081
+    config:
+      heapSize: 1.5g
+      high-availability: kubernetes
+      high-availability.storageDir: file:///flink-checkpoints/ha
+      high-availability.cluster-id: flink-realtime-lakehouse
+    nodeSelector: { }
+    tolerations: [ ]
+    affinity: { }
+
+  taskmanager:
+    replicas: 2
+
+    resources:
+      requests:
+        memory: 2Gi
+        cpu: 1
+      limits:
+        memory: 4Gi
+        cpu: 2
+
+    config:
+      heapSize: 2g
+      numberOfTaskSlots: 4
+    nodeSelector: { }
+    tolerations: [ ]
+    affinity: { }
+
+  credentials:
+    accessKey: minio-admin
+    secretKey: minio-password
+    region: ap-southeast-1
