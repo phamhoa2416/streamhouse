@@ -29,3 +29,14 @@ metadata:
       chart: streamhouse-{{ .Chart.Version }}
       release: {{ .Release.Name }}
       heritage: {{ .Release.Service }}
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.global.namespaces.network }}
+  labels:
+    app: streamhouse
+    chart: streamhouse-{{ .Chart.Version }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}

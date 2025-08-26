@@ -1,6 +1,7 @@
 global:
   appName: "streamhouse"
   namespaces:
+    network: "streamhouse-network"
     system: "streamhouse-system"
     data: "streamhouse-data"
     monitoring: "streamhouse-monitoring"
