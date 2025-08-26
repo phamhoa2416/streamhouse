@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flink-taskmanager
+  namespace: {{ .Values.global.namespaces.system }}
+  labels:
+    app: flink
+    component: taskmanager
+spec:
+  replicas: {{ .Values.flink.taskmanager.replicas }}
+  selector:
+    matchLabels:
+      app: flink
+      component: taskmanager
+  template:
+    metadata:
+      labels:
+        app: flink
+        component: taskmanager
+    spec:
+      serviceAccountName: flink-service-account
+      containers:
+        - name: flink-taskmanager
+          image: {{ .Values.flink.image.repository }}:{{ .Values.flink.image.tag }}
+          imagePullPolicy: {{ .Values.flink.image.pullPolicy }}
+          args: ["taskmanager"]
+          ports:
+            - name: rpc
+              containerPort: 6120
+            - name: data
+              containerPort: 6122
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: flink-s3-secrets
+                  key: aws-access-key
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: flink-s3-secrets
+                  key: aws-secret-key
+            - name: AWS_REGION
+              valueFrom:
+                secretKeyRef:
+                  name: flink-s3-secrets
+                  key: aws-region
+          resources:
+            requests:
+              cpu: {{ .Values.flink.taskmanager.resources.requests.cpu }}
+              memory: {{ .Values.flink.taskmanager.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.flink.taskmanager.resources.limits.cpu }}
+              memory: {{ .Values.flink.taskmanager.resources.limits.memory }}
+          volumeMounts:
+            - name: flink-config
+              mountPath: /opt/flink/conf/flink-conf.yaml
+              subPath: flink-conf.yaml
+            - name: flink-config
+              mountPath: /opt/flink/conf/core-site.xml
+              subPath: core-site.xml
+          readinessProbe:
+            tcpSocket:
+              port: 6122
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 6122
+            initialDelaySeconds: 60
+            periodSeconds: 30
+      volumes:
+        - name: flink-config
+          configMap:
+            name: flink-config
