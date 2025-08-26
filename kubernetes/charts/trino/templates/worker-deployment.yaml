@@ -1,22 +1,23 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: trino-worker
   namespace: {{ .Values.global.namespaces.system }}
   labels:
     app: trino
-    role: worker
+    component: worker
 spec:
+  serviceName: trino-worker
   replicas: {{ .Values.trino.worker.replicas }}
   selector:
     matchLabels:
       app: trino
-      role: worker
+      component: worker
   template:
     metadata:
       labels:
         app: trino
-        role: worker
+        component: worker
     spec:
       containers:
         - name: trino-worker
@@ -36,6 +37,16 @@ spec:
                 secretKeyRef:
                   name: trino-secret
                   key: secret-key
+            - name: NODE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          startupProbe:
+            httpGet:
+              path: /v1/info
+              port: {{ .Values.trino.service.ports.http }}
+            periodSeconds: 5
+            failureThreshold: 10
           readinessProbe:
             httpGet:
               port: {{ .Values.trino.service.ports.http }}
@@ -56,6 +67,8 @@ spec:
             - name: config
               mountPath: /etc/trino
               readOnly: true
+            - name: data
+              mountPath: /var/data/trino
           resources:
             {{ toYaml .Values.trino.worker.resources | nindent 12 }}
       volumes:
@@ -69,7 +82,9 @@ spec:
                 path: log.properties
               - key: worker.properties
                 path: config.properties
-              - key: node.properties
+              - key: worker.node.properties
                 path: node.properties
               - key: paimon.properties
                 path: catalog/paimon.properties
+        - name: data
+          emptyDir: {}
