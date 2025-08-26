@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: lakehouse-network-policy
+  namespace: {{ .Values.global.namespaces.network }}
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: {{ .Values.global.namespaces.network }}
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: {{ .Values.global.namespaces.network }}
+    - to: []
+      ports:
+        - protocol: TCP
+          port: 53
+        - protocol: UDP
+          port: 53
