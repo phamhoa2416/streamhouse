@@ -5,18 +5,18 @@ metadata:
   namespace: {{ .Values.global.namespaces.system }}
   labels:
     app: trino
-    role: coordinator
+    component: coordinator
 spec:
   replicas: {{ .Values.trino.coordinator.replicas }}
   selector:
     matchLabels:
       app: trino
-      role: coordinator
+      component: coordinator
   template:
     metadata:
       labels:
         app: trino
-        role: coordinator
+        component: coordinator
     spec:
       securityContext:
         runAsUser: 1000
@@ -73,7 +73,7 @@ spec:
                 path: log.properties
               - key: coordinator.properties
                 path: config.properties
-              - key: node.properties
+              - key: coordinator.node.properties
                 path: node.properties
               - key: paimon.properties
                 path: catalog/paimon.properties
