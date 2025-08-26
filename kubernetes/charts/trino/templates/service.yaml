@@ -5,7 +5,7 @@ metadata:
   namespace: {{ .Values.global.namespaces.system }}
   labels:
     app: trino
-    role: coordinator
+    component: coordinator
 spec:
   type: ClusterIP
   ports:
@@ -15,6 +15,7 @@ spec:
       protocol: TCP
   selector:
     app: trino
+    component: coordinator
 ---
 apiVersion: v1
 kind: Service
@@ -23,7 +24,7 @@ metadata:
   namespace: {{ .Values.global.namespaces.system }}
   labels:
     app: trino
-    role: coordinator
+    component: coordinator
 spec:
   clusterIP: None
   ports:
@@ -33,4 +34,22 @@ spec:
       protocol: TCP
   selector:
     app: trino
-    role: coordinator
+    component: coordinator
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: trino-worker
+  namespace: {{ .Values.global.namespaces.system }}
+  labels:
+    app: trino
+    component: worker
+spec:
+  clusterIP: None
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+  selector:
+    app: trino
+    component: worker
