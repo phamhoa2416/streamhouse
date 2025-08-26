@@ -1,0 +1,6 @@
+apiVersion: v2
+name: kafka
+description: Apache Kafka - a distributed event streaming platform for data lakehouse
+type: application
+version: 1.0.0
+appVersion: "7.6.6"

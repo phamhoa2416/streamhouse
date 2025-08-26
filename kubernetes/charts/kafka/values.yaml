@@ -1,0 +1,32 @@
+kafka:
+  image:
+    repository: "confluentinc/cp-kafka"
+    tag: "7.6.6"
+    pullPolicy: IfNotPresent
+
+  replicas: 2
+
+  persistence:
+    enabled: true
+    size: 5Gi
+    storageClass: standard
+
+  service:
+    type: ClusterIP
+    ports:
+      broker: 9092
+      controller: 9093
+
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 300m
+    limits:
+      memory: 1Gi
+      cpu: 600m
+
+  config:
+    clusterId: V9QT8q2XR1aMR_udoY14hw
+    numPartitions: 3
+    replicationFactor: 3
+    minInSyncReplicas: 2
