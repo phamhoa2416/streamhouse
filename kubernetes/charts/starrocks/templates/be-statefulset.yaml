@@ -22,7 +22,7 @@ spec:
       initContainers:
         - name: wait-for-fe
           image: busybox:1.28
-          command: [ 'sh', '-c', 'until nslookup starrocks-fe-headless.streamhouse-data.svc.cluster.local; do echo waiting for FE DNS; sleep 2; done' ]
+          command: [ 'sh', '-c', 'until nslookup starrocks-fe-headless.{{ .Values.global.namespaces.data }}.svc.cluster.local; do echo waiting for FE DNS; sleep 2; done' ]
       containers:
         - name: starrocks-be
           image: "{{ .Values.starrocks.backend.image.repository }}:{{ .Values.starrocks.backend.image.tag }}"
@@ -38,29 +38,40 @@ spec:
               containerPort: {{ .Values.starrocks.backend.service.ports.brpc }}
           env:
             - name: JAVA_OPTS
-              value: "-Xms2g -Xmx2g"
+              value: "-Xms{{ .Values.starrocks.backend.resources.requests.memory | replace "Gi" "g" | replace "Mi" "m" }} -Xmx{{ .Values.starrocks.backend.resources.limits.memory | replace "Gi" "g" | replace "Mi" "m" }} -XX:+UseG1GC"
             - name: FE_ADDRESS
               value: "starrocks-fe-headless.{{ .Values.global.namespaces.data}}.svc.cluster.local:{{ .Values.starrocks.frontend.service.ports.rpc }}"
-          resources: {{ toYaml .Values.starrocks.backend.resources | nindent 12 }}
+          startupProbe:
+            exec:
+              command:
+                - /bin/bash
+                - -c
+                - 'curl -f http://localhost:{{ .Values.starrocks.backend.service.ports.webserver }}/api/health || exit 1'
+            failureThreshold: 30
+            periodSeconds: 10
           readinessProbe:
             httpGet:
               path: /api/health
               port: {{ .Values.starrocks.backend.service.ports.webserver }}
-            initialDelaySeconds: 30
-            periodSeconds: 15
-            timeoutSeconds: 5
+            initialDelaySeconds: 20
+            periodSeconds: 5
+            timeoutSeconds: 3
           livenessProbe:
             httpGet:
               path: /api/health
               port: {{ .Values.starrocks.backend.service.ports.webserver }}
-            initialDelaySeconds: 20
-            periodSeconds: 30
+            initialDelaySeconds: 40
+            periodSeconds: 10
+            timeoutSeconds: 3
           volumeMounts:
             - mountPath: /opt/starrocks/be/storage
               name: data
             - mountPath: /opt/starrocks/be/conf/be.conf
               subPath: be.conf
               name: be-config
+            - mountPath: /opt/starrocks/be/log
+              name: logs
+          resources: {{ toYaml .Values.starrocks.backend.resources | nindent 12 }}
       volumes:
         - name: be-config
           configMap:
@@ -68,6 +79,8 @@ spec:
             items:
               - key: be.conf
                 path: be.conf
+        - name: logs
+          emptyDir: {}
   volumeClaimTemplates:
     - metadata:
         name: data
