@@ -4,7 +4,7 @@ kafka:
     tag: "7.6.6"
     pullPolicy: IfNotPresent
 
-  replicas: 2
+  replicas: 3
 
   persistence:
     enabled: true
