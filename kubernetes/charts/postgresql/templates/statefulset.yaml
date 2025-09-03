@@ -40,8 +40,6 @@ spec:
             - name: data
               mountPath: /var/lib/postgresql/data
           resources: {{ toYaml .Values.postgres.resources | nindent 12 }}
-      nodeSelector:
-        kubernetes.io/hostname: streamhouse-m02
   volumeClaimTemplates:
     - metadata:
         name: data
