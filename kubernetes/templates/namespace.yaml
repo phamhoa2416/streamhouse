@@ -7,6 +7,7 @@ metadata:
     chart: streamhouse-{{ .Chart.Version }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
+    name: {{ .Values.global.namespaces.system }}
 
 ---
 apiVersion: v1
@@ -18,6 +19,7 @@ metadata:
     chart: streamhouse-{{ .Chart.Version }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
+    name: {{ .Values.global.namespaces.data }}
 
 ---
 apiVersion: v1
@@ -29,6 +31,7 @@ metadata:
       chart: streamhouse-{{ .Chart.Version }}
       release: {{ .Release.Name }}
       heritage: {{ .Release.Service }}
+      name: {{ .Values.global.namespaces.monitoring }}
 
 ---
 apiVersion: v1
@@ -40,3 +43,4 @@ metadata:
     chart: streamhouse-{{ .Chart.Version }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
+    name: {{ .Values.global.namespaces.network }}
