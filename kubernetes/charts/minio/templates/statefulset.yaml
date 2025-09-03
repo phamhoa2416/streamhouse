@@ -22,9 +22,7 @@ spec:
           imagePullPolicy: {{ .Values.minio.image.pullPolicy }}
           args:
             - server
-            {{- range $i, $e := until (int .Values.minio.mode.replicas) }}
-            - http://minio-{{ $i }}.minio-headless.{{ $.Values.global.namespaces.data }}.svc.cluster.local/data
-            {{- end }}
+            - /data
             - --console-address
             - ":9001"
           env:
@@ -38,16 +36,6 @@ spec:
                 secretKeyRef:
                   name: minio-secret
                   key: rootPassword
-            - name: MINIO_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: minio-secret
-                  key: accessKey
-            - name: MINIO_SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: minio-secret
-                  key: secretKey
             - name: MINIO_REGION_NAME
               valueFrom:
                 secretKeyRef:
@@ -72,11 +60,11 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 10
           volumeMounts:
-            - name: data
+            - name: minio-data
               mountPath: /data
   volumeClaimTemplates:
     - metadata:
-        name: data
+        name: minio-data
       spec:
         accessModes: [ "ReadWriteOnce" ]
         storageClassName: standard

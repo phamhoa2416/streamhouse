@@ -5,8 +5,8 @@ minio:
     pullPolicy: IfNotPresent
 
   mode:
-    type: distributed
-    replicas: 3
+    type: standalone
+    replicas: 1
 
   auth:
     rootUser: minio-admin
@@ -14,7 +14,7 @@ minio:
 
   persistence:
     enabled: true
-    size: 5Gi
+    size: 10Gi
     storageClass: standard
 
   service:
