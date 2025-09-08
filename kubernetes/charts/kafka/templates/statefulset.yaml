@@ -7,7 +7,7 @@ metadata:
     app: kafka
 spec:
   serviceName: kafka-headless
-  replicas: 3
+  replicas: {{ .Values.kafka.replicas }}
   selector:
     matchLabels:
       app: kafka
@@ -16,11 +16,18 @@ spec:
       labels:
         app: kafka
     spec:
+      securityContext:
+        fsGroup: 1000
+        runAsUser: 1000
+        runAsGroup: 1000
       nodeSelector:
         kubernetes.io/hostname: streamhouse
       containers:
         - name: kafka
           image: {{ .Values.kafka.image.repository }}:{{ .Values.kafka.image.tag }}
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
           imagePullPolicy: {{ .Values.kafka.image.pullPolicy }}
           ports:
             - containerPort: {{ .Values.kafka.service.ports.broker }}
@@ -69,13 +76,14 @@ spec:
             - name: KAFKA_AUTO_CREATE_TOPICS_ENABLE
               value: "true"
           volumeMounts:
-            - name: data
+            - name: kafka-data
               mountPath: /var/lib/kafka/data
   volumeClaimTemplates:
     - metadata:
-        name: data
+        name: kafka-data
       spec:
         accessModes: ["ReadWriteOnce"]
+        storageClassName: {{ .Values.kafka.persistence.storageClass }}
         resources:
           requests:
             storage: 5Gi
