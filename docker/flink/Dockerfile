@@ -1,20 +1,6 @@
 FROM flink:1.20.2-scala_2.12
 LABEL authors="phamviethoa"
 
-ENV FLINK_VERSION=1.20.2
-ENV FLINK_CDC_VERSION=3.4.0
-ENV FLINK_CONNECTOR_KAFKA_VERSION=3.4.0-1.20
-ENV FLINK_CONNECTOR_ELASTICSEARCH_VERSION=3.1.0-1.20
-ENV FLINK_CONNECTOR_JDBC_VERSION=3.3.0-1.20
-ENV FLINK_CONNECTOR_MONGODB_SQL_VERSION=1.2.0-1.18
-ENV HADOOP_VERSION=3.4.0
-ENV AWS_SDK_VERSION=1.12.750
-ENV ICEBERG_VERSION=1.9.0
-ENV PAIMON_VERSION=1.2.0
-ENV HUDI_VERSION=1.0.2
-ENV HUDI_BUNDLE_VERSION=0.9.0
-ENV FLINK_ML_VERSION=1.20.2
-
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     wget \
@@ -22,100 +8,61 @@ RUN apt-get update && \
     curl && \
     rm -rf /var/lib/apt/lists/*
 
-RUN mkdir -p /opt/flink/lib
+WORKDIR /opt/flink
 
-# ==============================
-# CDC connectors
-# ==============================
-RUN curl -L -o /opt/flink/lib/flink-connector-postgres-cdc-${FLINK_CDC_VERSION}.jar \
-    https://repo1.maven.org/maven2/com/ververica/flink-connector-postgres-cdc/${FLINK_CDC_VERSION}/flink-connector-postgres-cdc-${FLINK_CDC_VERSION}.jar || \
-    curl -L -o /opt/flink/lib/flink-connector-postgres-cdc-${FLINK_CDC_VERSION}.jar \
-    https://repository.apache.org/content/repositories/releases/com/ververica/flink-connector-postgres-cdc/${FLINK_CDC_VERSION}/flink-connector-postgres-cdc-${FLINK_CDC_VERSION}.jar && \
-    curl -L -o /opt/flink/lib/flink-connector-mysql-cdc-${FLINK_CDC_VERSION}.jar \
-    https://repo1.maven.org/maven2/com/ververica/flink-connector-mysql-cdc/${FLINK_CDC_VERSION}/flink-connector-mysql-cdc-${FLINK_CDC_VERSION}.jar || \
-    curl -L -o /opt/flink/lib/flink-connector-mysql-cdc-${FLINK_CDC_VERSION}.jar \
-    https://repository.apache.org/content/repositories/releases/com/ververica/flink-connector-mysql-cdc/${FLINK_CDC_VERSION}/flink-connector-mysql-cdc-${FLINK_CDC_VERSION}.jar && \
-    curl -L -o /opt/flink/lib/flink-connector-mongodb-cdc-${FLINK_CDC_VERSION}.jar \
-    https://repo1.maven.org/maven2/com/ververica/flink-connector-mongodb-cdc/${FLINK_CDC_VERSION}/flink-connector-mongodb-cdc-${FLINK_CDC_VERSION}.jar || \
-    curl -L -o /opt/flink/lib/flink-connector-mongodb-cdc-${FLINK_CDC_VERSION}.jar \
-    https://repository.apache.org/content/repositories/releases/com/ververica/flink-connector-mongodb-cdc/${FLINK_CDC_VERSION}/flink-connector-mongodb-cdc-${FLINK_CDC_VERSION}.jar && \
-    curl -L -o /opt/flink/lib/flink-connector-sqlserver-cdc-${FLINK_CDC_VERSION}.jar \
-    https://repo1.maven.org/maven2/com/ververica/flink-connector-sqlserver-cdc/${FLINK_CDC_VERSION}/flink-connector-sqlserver-cdc-${FLINK_CDC_VERSION}.jar || \
-    curl -L -o /opt/flink/lib/flink-connector-sqlserver-cdc-${FLINK_CDC_VERSION}.jar \
-    https://repository.apache.org/content/repositories/releases/com/ververica/flink-connector-sqlserver-cdc/${FLINK_CDC_VERSION}/flink-connector-sqlserver-cdc-${FLINK_CDC_VERSION}.jar
+# Create directories for different jar categories
+RUN mkdir -p lib/connectors lib/table lib/hadoop lib/aws lib/ml
 
-# ==============================
-# Flink ML
-# ==============================
-RUN curl -L -o /opt/flink/lib/flink-ml-uber-${FLINK_ML_VERSION}.jar \
-    https://repo1.maven.org/maven2/org/apache/flink/flink-ml-uber/${FLINK_ML_VERSION}/flink-ml-uber-${FLINK_ML_VERSION}.jar || \
-    curl -L -o /opt/flink/lib/flink-ml-uber-${FLINK_ML_VERSION}.jar \
-    https://repository.apache.org/content/repositories/releases/org/apache/flink/flink-ml-uber/${FLINK_ML_VERSION}/flink-ml-uber-${FLINK_ML_VERSION}.jar
+# Download Paimon jars
+RUN curl -o lib/paimon-flink-1.20-1.2.0.jar https://repo1.maven.org/maven2/org/apache/paimon/paimon-flink-1.20/1.2.0/paimon-flink-1.20-1.2.0.jar && \
+    curl -o lib/paimon-s3-1.2.0.jar https://repo1.maven.org/maven2/org/apache/paimon/paimon-s3/1.2.0/paimon-s3-1.2.0.jar && \
+    curl -o lib/paimon-flink-action-1.2.0.jar https://repo1.maven.org/maven2/org/apache/paimon/paimon-flink-action/1.2.0/paimon-flink-action-1.2.0.jar
 
-# ==============================
-# Kafka, Elasticsearch, JDBC
-# ==============================
-RUN curl -L -o /opt/flink/lib/flink-connector-kafka-${FLINK_CONNECTOR_KAFKA_VERSION}.jar \
-    https://repo1.maven.org/maven2/org/apache/flink/flink-connector-kafka/${FLINK_CONNECTOR_KAFKA_VERSION}/flink-connector-kafka-${FLINK_CONNECTOR_KAFKA_VERSION}.jar || \
-    curl -L -o /opt/flink/lib/flink-connector-kafka-${FLINK_CONNECTOR_KAFKA_VERSION}.jar \
-    https://repository.apache.org/content/repositories/releases/org/apache/flink/flink-connector-kafka/${FLINK_CONNECTOR_KAFKA_VERSION}/flink-connector-kafka-${FLINK_CONNECTOR_KAFKA_VERSION}.jar && \
-    curl -L -o /opt/flink/lib/flink-connector-elasticsearch7-${FLINK_CONNECTOR_ELASTICSEARCH_VERSION}.jar \
-    https://repo1.maven.org/maven2/org/apache/flink/flink-connector-elasticsearch7/${FLINK_CONNECTOR_ELASTICSEARCH_VERSION}/flink-connector-elasticsearch7-${FLINK_CONNECTOR_ELASTICSEARCH_VERSION}.jar || \
-    curl -L -o /opt/flink/lib/flink-connector-elasticsearch7-${FLINK_CONNECTOR_ELASTICSEARCH_VERSION}.jar \
-    https://repository.apache.org/content/repositories/releases/org/apache/flink/flink-connector-elasticsearch7/${FLINK_CONNECTOR_ELASTICSEARCH_VERSION}/flink-connector-elasticsearch7-${FLINK_CONNECTOR_ELASTICSEARCH_VERSION}.jar && \
-    curl -L -o /opt/flink/lib/flink-connector-jdbc-${FLINK_CONNECTOR_JDBC_VERSION}.jar \
-    https://repo1.maven.org/maven2/org/apache/flink/flink-connector-jdbc/${FLINK_CONNECTOR_JDBC_VERSION}/flink-connector-jdbc-${FLINK_CONNECTOR_JDBC_VERSION}.jar || \
-    curl -L -o /opt/flink/lib/flink-connector-jdbc-${FLINK_CONNECTOR_JDBC_VERSION}.jar \
-    https://repository.apache.org/content/repositories/releases/org/apache/flink/flink-connector-jdbc/${FLINK_CONNECTOR_JDBC_VERSION}/flink-connector-jdbc-${FLINK_CONNECTOR_JDBC_VERSION}.jar
+# Download Data Generation connector
+RUN curl -o lib/connectors/flink-connector-datagen-1.20.2.jar https://repo1.maven.org/maven2/org/apache/flink/flink-connector-datagen/1.20.2/flink-connector-datagen-1.20.2.jar
 
-# ==============================
-# MongoDB SQL connector
-# ==============================
-RUN curl -L -o /opt/flink/lib/flink-sql-connector-mongodb-${FLINK_CONNECTOR_MONGODB_SQL_VERSION}.jar \
-    https://repo1.maven.org/maven2/org/apache/flink/flink-sql-connector-mongodb/${FLINK_CONNECTOR_MONGODB_SQL_VERSION}/flink-sql-connector-mongodb-${FLINK_CONNECTOR_MONGODB_SQL_VERSION}.jar || \
-    curl -L -o /opt/flink/lib/flink-sql-connector-mongodb-${FLINK_CONNECTOR_MONGODB_SQL_VERSION}.jar \
-    https://repository.apache.org/content/repositories/releases/org/apache/flink/flink-sql-connector-mongodb/${FLINK_CONNECTOR_MONGODB_SQL_VERSION}/flink-sql-connector-mongodb-${FLINK_CONNECTOR_MONGODB_SQL_VERSION}.jar
+# Download Iceberg jars
+RUN curl -o lib/iceberg-flink-1.20-1.8.0.jar https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-flink-1.20/1.8.0/iceberg-flink-1.20-1.8.0.jar && \
+    curl -o lib/iceberg-flink-runtime-1.20-1.8.0.jar https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-flink-runtime-1.20/1.8.0/iceberg-flink-runtime-1.20-1.8.0.jar
 
-# ==============================
-# S3, Hadoop, AWS SDK
-# ==============================
-RUN curl -L -o /opt/flink/lib/flink-s3-fs-hadoop-${FLINK_VERSION}.jar \
-    https://repo1.maven.org/maven2/org/apache/flink/flink-s3-fs-hadoop/${FLINK_VERSION}/flink-s3-fs-hadoop-${FLINK_VERSION}.jar || \
-    curl -L -o /opt/flink/lib/flink-s3-fs-hadoop-${FLINK_VERSION}.jar \
-    https://repository.apache.org/content/repositories/releases/org/apache/flink/flink-s3-fs-hadoop/${FLINK_VERSION}/flink-s3-fs-hadoop-${FLINK_VERSION}.jar && \
-    curl -L -o /opt/flink/lib/hadoop-aws-${HADOOP_VERSION}.jar \
-    https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/${HADOOP_VERSION}/hadoop-aws-${HADOOP_VERSION}.jar || \
-    curl -L -o /opt/flink/lib/hadoop-aws-${HADOOP_VERSION}.jar \
-    https://repository.apache.org/content/repositories/releases/org/apache/hadoop/hadoop-aws/${HADOOP_VERSION}/hadoop-aws-${HADOOP_VERSION}.jar && \
-    curl -L -o /opt/flink/lib/aws-java-sdk-bundle-${AWS_SDK_VERSION}.jar \
-    https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-bundle/${AWS_SDK_VERSION}/aws-java-sdk-bundle-${AWS_SDK_VERSION}.jar || \
-    curl -L -o /opt/flink/lib/aws-java-sdk-bundle-${AWS_SDK_VERSION}.jar \
-    https://repository.apache.org/content/repositories/releases/com/amazonaws/aws-java-sdk-bundle/${AWS_SDK_VERSION}/aws-java-sdk-bundle-${AWS_SDK_VERSION}.jar
+# Download Hadoop jars
+RUN curl -o lib/hadoop/hadoop-common-3.4.0.jar https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-common/3.4.0/hadoop-common-3.4.0.jar && \
+    curl -o lib/hadoop/hadoop-aws-3.4.0.jar https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/3.4.0/hadoop-aws-3.4.0.jar && \
+    curl -o lib/hadoop/hadoop-hdfs-client-3.4.0.jar https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-hdfs-client/3.4.0/hadoop-hdfs-client-3.4.0.jar && \
+    curl -o lib/hadoop/hadoop-mapreduce-client-core-3.4.0.jar https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-mapreduce-client-core/3.4.0/hadoop-mapreduce-client-core-3.4.0.jar
 
-# ==============================
-# Iceberg, Paimon, Hudi
-# ==============================
-RUN curl -L -o /opt/flink/lib/iceberg-flink-1.20-${ICEBERG_VERSION}.jar \
-    https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-flink-1.20/${ICEBERG_VERSION}/iceberg-flink-1.20-${ICEBERG_VERSION}.jar || \
-    curl -L -o /opt/flink/lib/iceberg-flink-1.20-${ICEBERG_VERSION}.jar \
-    https://repository.apache.org/content/repositories/releases/org/apache/iceberg/iceberg-flink-1.20/${ICEBERG_VERSION}/iceberg-flink-1.20-${ICEBERG_VERSION}.jar && \
-    curl -L -o /opt/flink/lib/iceberg-flink-runtime-1.20-${ICEBERG_VERSION}.jar \
-    https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-flink-runtime-1.20/${ICEBERG_VERSION}/iceberg-flink-runtime-1.20-${ICEBERG_VERSION}.jar || \
-    curl -L -o /opt/flink/lib/iceberg-flink-runtime-1.20-${ICEBERG_VERSION}.jar \
-    https://repository.apache.org/content/repositories/releases/org/apache/iceberg/iceberg-flink-runtime-1.20/${ICEBERG_VERSION}/iceberg-flink-runtime-1.20-${ICEBERG_VERSION}.jar && \
-    curl -L -o /opt/flink/lib/paimon-flink-${FLINK_VERSION}-${PAIMON_VERSION}.jar \
-    https://repo1.maven.org/maven2/org/apache/paimon/paimon-flink-${FLINK_VERSION}/${PAIMON_VERSION}/paimon-flink-${FLINK_VERSION}-${PAIMON_VERSION}.jar || \
-    curl -L -o /opt/flink/lib/paimon-flink-${FLINK_VERSION}-${PAIMON_VERSION}.jar \
-    https://repository.apache.org/content/repositories/releases/org/apache/paimon/paimon-flink-${FLINK_VERSION}/${PAIMON_VERSION}/paimon-flink-${FLINK_VERSION}-${PAIMON_VERSION}.jar && \
-    curl -L -o /opt/flink/lib/paimon-s3-${PAIMON_VERSION}.jar \
-    https://repo1.maven.org/maven2/org/apache/paimon/paimon-s3/${PAIMON_VERSION}/paimon-s3-${PAIMON_VERSION}.jar || \
-    curl -L -o /opt/flink/lib/paimon-s3-${PAIMON_VERSION}.jar \
-    https://repository.apache.org/content/repositories/releases/org/apache/paimon/paimon-s3/${PAIMON_VERSION}/paimon-s3-${PAIMON_VERSION}.jar && \
-    curl -L -o /opt/flink/lib/hudi-flink1.20.x-${HUDI_VERSION}.jar \
-    https://repo1.maven.org/maven2/org/apache/hudi/hudi-flink1.20.x/${HUDI_VERSION}/hudi-flink1.20.x-${HUDI_VERSION}.jar || \
-    curl -L -o /opt/flink/lib/hudi-flink1.20.x-${HUDI_VERSION}.jar \
-    https://repository.apache.org/content/repositories/releases/org/apache/hudi/hudi-flink1.20.x/${HUDI_VERSION}/hudi-flink1.20.x-${HUDI_VERSION}.jar && \
-    curl -L -o /opt/flink/lib/hudi-flink-bundle_2.12-${HUDI_BUNDLE_VERSION}.jar \
-    https://repo1.maven.org/maven2/org/apache/hudi/hudi-flink-bundle_2.12/${HUDI_BUNDLE_VERSION}/hudi-flink-bundle_2.12-${HUDI_BUNDLE_VERSION}.jar || \
-    curl -L -o /opt/flink/lib/hudi-flink-bundle_2.12-${HUDI_BUNDLE_VERSION}.jar \
-    https://repository.apache.org/content/repositories/releases/org/apache/hudi/hudi-flink-bundle_2.12/${HUDI_BUNDLE_VERSION}/hudi-flink-bundle_2.12-${HUDI_BUNDLE_VERSION}.jar
+# Download AWS SDK
+RUN curl -o lib/aws/aws-java-sdk-bundle-1.12.750.jar https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-bundle/1.12.750/aws-java-sdk-bundle-1.12.750.jar
+
+# Download S3 filesystem connectors
+RUN curl -o lib/connectors/flink-s3-fs-hadoop-1.20.2.jar https://repo1.maven.org/maven2/org/apache/flink/flink-s3-fs-hadoop/1.20.2/flink-s3-fs-hadoop-1.20.2.jar && \
+    curl -o lib/hadoop/flink-shaded-hadoop-2-uber-2.8.3-10.0.jar https://repo1.maven.org/maven2/org/apache/flink/flink-shaded-hadoop-2-uber/2.8.3-10.0/flink-shaded-hadoop-2-uber-2.8.3-10.0.jar
+
+# Download Hudi connector
+RUN curl -o lib/connectors/hudi-flink1.20-bundle-1.0.2.jar https://repo1.maven.org/maven2/org/apache/hudi/hudi-flink1.20-bundle/1.0.2/hudi-flink1.20-bundle-1.0.2.jar
+
+# Download JDBC connectors
+RUN curl -o lib/connectors/flink-connector-jdbc-3.3.0-1.20.jar https://repo1.maven.org/maven2/org/apache/flink/flink-connector-jdbc/3.3.0-1.20/flink-connector-jdbc-3.3.0-1.20.jar && \
+    curl -o lib/connectors/flink-connector-jdbc-core-3.3.0-1.20.jar https://repo1.maven.org/maven2/org/apache/flink/flink-connector-jdbc-core/3.3.0-1.20/flink-connector-jdbc-core-3.3.0-1.20.jar
+
+# Download SQL connectors
+RUN curl -o lib/table/flink-sql-connector-kafka-3.3.0-1.20.jar https://repo1.maven.org/maven2/org/apache/flink/flink-sql-connector-kafka/3.3.0-1.20/flink-sql-connector-kafka-3.3.0-1.20.jar && \
+    curl -o lib/table/flink-sql-connector-mysql-cdc-3.3.0.jar https://repo1.maven.org/maven2/org/apache/flink/flink-sql-connector-mysql-cdc/3.3.0/flink-sql-connector-mysql-cdc-3.3.0.jar && \
+    curl -o lib/table/flink-sql-connector-mongodb-cdc-3.3.0.jar https://repo1.maven.org/maven2/org/apache/flink/flink-sql-connector-mongodb-cdc/3.3.0/flink-sql-connector-mongodb-cdc-3.3.0.jar && \
+    curl -o lib/table/flink-sql-connector-sqlserver-cdc-3.3.0.jar https://repo1.maven.org/maven2/org/apache/flink/flink-sql-connector-sqlserver-cdc/3.3.0/flink-sql-connector-sqlserver-cdc-3.3.0.jar && \
+    curl -o lib/table/flink-sql-connector-postgres-cdc-3.3.0.jar https://repo1.maven.org/maven2/org/apache/flink/flink-sql-connector-postgres-cdc/3.3.0/flink-sql-connector-postgres-cdc-3.3.0.jar
+
+## Download Paimon Trino plugin (tar.gz file)
+#RUN mkdir -p lib/paimon-trino && \
+#    curl -L https://repository.apache.org/content/repositories/snapshots/org/apache/paimon/paimon-trino-427/0.8-SNAPSHOT/paimon-trino-427-0.8-20241120.000616-204-plugin.tar.gz | \
+#    tar -xz -C lib/paimon-trino
+
+## Download Flink ML library
+#RUN curl -o lib/ml/flink-ml-uber-1.17-2.3.0.jar https://repo1.maven.org/maven2/org/apache/flink/flink-ml-uber-1.17/2.3.0/flink-ml-uber-1.17-2.3.0.jar
+
+# Copy all jars to Flink's lib directory for automatic loading
+RUN cp lib/*.jar lib/connectors/*.jar lib/table/*.jar lib/hadoop/*.jar lib/aws/*.jar lib/ml/*.jar /opt/flink/lib/ 2>/dev/null || true
+
+# Clean up to reduce image size
+RUN apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
