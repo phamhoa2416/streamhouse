@@ -13,34 +13,38 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Customer {
+    private String customerId;
+    private String email;
     private String firstName;
     private String lastName;
-    private String email;
     private String phone;
     private LocalDate dateOfBirth;
+    private String gender;
     private String address;
     private String city;
     private String country;
     private String postalCode;
-    private LocalDate registrationDate;
-    private LocalDateTime customerSince;
-    private String status;
+    private boolean isActive;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
     @Override
     public String toString() {
         return "Customer{" +
-                "firstName='" + firstName + '\'' +
-                ", lastName='" + lastName + '\'' +
+                "customerId=" + customerId +
                 ", email='" + email + '\'' +
+                ", firstName='" + firstName + '\'' +
+                ", lastName='" + lastName + '\'' +
                 ", phone='" + phone + '\'' +
                 ", dateOfBirth=" + dateOfBirth +
+                ", gender='" + gender + '\'' +
                 ", address='" + address + '\'' +
                 ", city='" + city + '\'' +
                 ", country='" + country + '\'' +
                 ", postalCode='" + postalCode + '\'' +
-                ", registrationDate=" + registrationDate +
-                ", customerSince=" + customerSince +
-                ", status='" + status + '\'' +
+                ", isActive=" + isActive +
+                ", createdAt=" + createdAt +
+                ", updatedAt=" + updatedAt +
                 '}';
     }
 }
