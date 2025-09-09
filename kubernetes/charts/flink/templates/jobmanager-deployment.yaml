@@ -72,7 +72,7 @@ spec:
             failureThreshold: 5
           volumeMounts:
             - name: flink-config
-              mountPath: /opt/flink/conf/flink-conf.yaml
+              mountPath: /opt/flink/conf/conf.yaml
               subPath: flink-conf.yaml
             - name: flink-config
               mountPath: /opt/flink/conf/core-site.xml
