@@ -24,8 +24,13 @@ data:
 
     state.backend: rocksdb
     state.backend.incremental: true
-    state.checkpoints.dir: s3a://flink-checkpoints/
-    state.savepoints.dir: s3a://flink-savepoints/
+    state.checkpoints.dir: s3://flink-checkpoints/
+    state.savepoints.dir: s3://flink-savepoints/
+
+    execution.checkpointing.interval: 60s
+    execution.checkpointing.min-pause: 10s
+    execution.checkpointing.timeout: 300s
+    execution.checkpointing.max-concurrent-checkpoints: 1
 
     # Tuning cho RocksDB (tuỳ workload)
     state.backend.rocksdb.memory.managed: true
@@ -53,6 +58,11 @@ data:
     parallelism.default: 4
     heartbeat.timeout: 10000
     heartbeat.interval: 5000
+
+    s3.endpoint: http://minio.{{ .Values.global.namespaces.data }}.svc.cluster.local:9000
+    s3.access-key: minio-admin
+    s3.secret-key: minio-password
+    s3.path-style-access: true
 
     fs.s3a.endpoint: http://minio.{{ .Values.global.namespaces.data }}.svc.cluster.local:9000
     fs.s3a.access.key: {{ .Values.flink.credentials.accessKey }}
